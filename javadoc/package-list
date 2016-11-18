@@ -1,0 +1,12 @@
+net.centro.rtb.monitoringcenter
+net.centro.rtb.monitoringcenter.config
+net.centro.rtb.monitoringcenter.config.dto
+net.centro.rtb.monitoringcenter.infos
+net.centro.rtb.monitoringcenter.metrics
+net.centro.rtb.monitoringcenter.metrics.forwarding
+net.centro.rtb.monitoringcenter.metrics.instrumented
+net.centro.rtb.monitoringcenter.metrics.system
+net.centro.rtb.monitoringcenter.metrics.system.jvm
+net.centro.rtb.monitoringcenter.metrics.system.os
+net.centro.rtb.monitoringcenter.metrics.tomcat
+net.centro.rtb.monitoringcenter.util
