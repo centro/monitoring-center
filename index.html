@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>MonitoringCenter by centro</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>MonitoringCenter</h1>
+        <p>MonitoringCenter is an easy-to-use, comprehensive framework for programmatically monitoring Java applications.</p>
+
+        <p class="view"><a href="https://github.com/centro/monitoring-center">View the Project on GitHub <small>centro/monitoring-center</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/centro/monitoring-center/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/centro/monitoring-center/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/centro/monitoring-center">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h3>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features</h3>
+
+<p>Built on top of Dropwizard's <a href="https://dropwizard.github.io/metrics">Metrics</a> library, MonitoringCenter gives you:</p>
+
+<ul>
+<li>Ability to centrally collect and report on metrics.</li>
+<li>Ability to centrally register, execute, and report on health checks.</li>
+<li>Out of the box metric collection for OS, JVM, and Tomcat statistics, including programmatic access to the collected metrics.</li>
+<li>Out of the box support for instrumentation of collections, maps, caches, executors, and C3P0 data sources.</li>
+<li>Logger-like paradigm for metric collection from anywhere in your Java application.</li>
+<li>Unified, distributed system-ready, naming schema for metrics and health checks.</li>
+<li>Programmatic, file-based, or hybrid framework configuration with support for reloadable parameters.</li>
+<li>Insight into the OS, JVM, network node, application, and servlet container configuration.</li>
+</ul>
+
+<h3>
+<a id="documentation" class="anchor" href="#documentation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Documentation</h3>
+
+<p>See <a href="https://github.com/centro/monitoring-center/blob/master/README.md">README</a> and <a href="https://centro.github.io/monitoring-center/javadoc">Javadoc</a> for detailed documentation.</p>
+
+<h3>
+<a id="why-not-simply-use-dropwizards-metrics" class="anchor" href="#why-not-simply-use-dropwizards-metrics" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Why not simply use Dropwizard's Metrics?</h3>
+
+<p>While Metrics is a great library, it merely provides building blocks for metrics and health checks
+without a clear path to enterprise integration and roll out. MonitoringCenter aims to provide idioms
+and ready-to-use facilities that can right away be employed throughout your Java applications.</p>
+
+<p>As we worked on the Centro's Real-Time Bidding systems, we gradually realized that 1) gaining insight into the live
+application is absolutely crucial for decision-making and, later on, that 2) our monitoring code is all
+over the place. Bidder's monitoring code consisted of Dropwizard's Metrics registered via a singleton,
+legacy metrics (AtomicLong bundles) owned by multiple services, JSPs, logging statements, a myriad of servlets
+for reporting health checks, system status, build info, and node info. Naming was up to an engineer's mood.
+Altogether, a chaos, out of which MonitoringCenter was born.</p>
+
+<p>MonitoringCenter's ultimate goal is to encapsulate, standardize, and facilitate all monitoring concerns within a
+Java application.</p>
+
+<h3>
+<a id="is-it-safe-to-use-how-is-performance" class="anchor" href="#is-it-safe-to-use-how-is-performance" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Is it safe to use? How is performance?</h3>
+
+<p>MonitoringCenter has been fully integrated into all of the Centro's Real-Time Bidding components. These components are 
+currently running in production with the library invoked on the critical path millions of times a second.</p>
+
+<h3>
+<a id="authors" class="anchor" href="#authors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authors</h3>
+
+<p>Alexey Rudkovskiy (<a href="mailto:alexey.rudkovskiy@centro.net">alexey.rudkovskiy@centro.net</a>)<br>
+Xianli Li (<a href="mailto:tom.li@centro.net">tom.li@centro.net</a>)</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/centro">centro</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
