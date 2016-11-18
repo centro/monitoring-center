@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.centro.rtb</groupId>
@@ -45,8 +46,8 @@
 
         <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
 
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+        <javac.src.version>1.7</javac.src.version>
+        <javac.target.version>1.7</javac.target.version>
 
         <jackson.version>2.7.8</jackson.version>
         <metrics.version>3.1.2</metrics.version>
@@ -146,10 +147,81 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <fork>true</fork>
+                    <compilerVersion>${javac.src.version}</compilerVersion>
+                    <source>${javac.src.version}</source>
+                    <target>${javac.target.version}</target>
+                    <showDeprecation>true</showDeprecation>
+                    <showWarnings>true</showWarnings>
+                    <optimize>true</optimize>
+                    <debug>true</debug>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>external.atlassian.jgitflow</groupId>
                 <artifactId>jgitflow-maven-plugin</artifactId>
                 <version>1.0-m5.1</version>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.8.1</version>
+                <configuration>
+                    <source>${javac.src.version}</source>
+                    <target>${javac.target.version}</target>
+                    <encoding>UTF-8</encoding>
+                    <links>
+                        <link>https://docs.oracle.com/javase/7/docs/api/</link>
+                    </links>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.8.1</version>
+                <configuration>
+                    <aggregate>true</aggregate>
+                    <source>1.7</source>
+                    <encoding>UTF-8</encoding>
+                    <links>
+                        <link>https://docs.oracle.com/javase/7/docs/api/</link>
+                    </links>
+                    <bootclasspath>${sun.boot.class.path}</bootclasspath>
+                    <doclet>com.google.doclava.Doclava</doclet>
+                    <useStandardDocletOptions>false</useStandardDocletOptions>
+                    <docletArtifact>
+                        <groupId>com.google.doclava</groupId>
+                        <artifactId>doclava</artifactId>
+                        <version>1.0.3</version>
+                    </docletArtifact>
+                </configuration>
+                <reportSets>
+                    <reportSet>
+                        <id>default</id>
+                        <reports>
+                            <report>javadoc</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>
