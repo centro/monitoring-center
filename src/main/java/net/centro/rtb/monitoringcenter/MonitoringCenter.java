@@ -728,7 +728,7 @@ public class MonitoringCenter {
         configured.set(true);
     }
 
-    private static void reloadConfig() {
+    protected static void reloadConfig() {
         if (!configured.get() || initialConfig.getConfigFile() == null) {
             return;
         }
