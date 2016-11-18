@@ -478,6 +478,7 @@ public class MonitoringCenter {
      * has not been called explicitly.
      *
      * @param name name of the health check to register.
+     * @param healthCheck a health check to register.
      * @throws NullPointerException if <tt>healthCheck</tt> is <tt>null</tt>.
      * @throws IllegalArgumentException if <tt>name</tt> is blank.
      */
