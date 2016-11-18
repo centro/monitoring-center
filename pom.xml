@@ -25,6 +25,12 @@
             <organization>Centro</organization>
             <organizationUrl>http://www.centro.net</organizationUrl>
         </developer>
+        <developer>
+            <name>Xianli Li</name>
+            <email>xianli.li@centro.net</email>
+            <organization>Centro</organization>
+            <organizationUrl>http://www.centro.net</organizationUrl>
+        </developer>
     </developers>
 
     <scm>
@@ -122,6 +128,18 @@
             <artifactId>javax.servlet-api</artifactId>
             <version>3.1.0</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <version>1.10.8</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
