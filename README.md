@@ -68,14 +68,14 @@ Maven
 <dependency>
   <groupId>net.centro.rtb</groupId>
   <artifactId>monitoring-center</artifactId>
-  <version>1.0.5</version>
+  <version>${monitoring-center-version}</version>
 </dependency>
 ```
 
 Gradle
 ```
 dependencies {
-  compile 'net.centro.rtb:monitoring-center:1.0.5'
+  compile "net.centro.rtb:monitoring-center:${monitoring-center-version}"
 }
 ```
 #### Javadoc
