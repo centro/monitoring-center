@@ -195,7 +195,6 @@
                 <version>2.9.1</version>
                 <configuration>
                     <source>${javac.src.version}</source>
-                    <target>${javac.target.version}</target>
                     <encoding>UTF-8</encoding>
                     <links>
                         <link>https://docs.oracle.com/javase/7/docs/api/</link>
