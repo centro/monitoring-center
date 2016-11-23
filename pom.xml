@@ -39,6 +39,7 @@
     <scm>
         <connection>scm:git:ssh://git@github.com:centro/monitoring-center.git</connection>
         <developerConnection>scm:git:ssh://git@github.com:centro/monitoring-center.git</developerConnection>
+        <url>https://github.com/centro/monitoring-center/tree/master</url>
         <tag>HEAD</tag>
     </scm>
 
