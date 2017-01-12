@@ -110,9 +110,31 @@ public interface TomcatConnectorStatus {
     Gauge<Integer> getTotalRequestsGauge();
 
     /**
+     * Retrieves the number of error responses returned by this connector. An error response is defined as a response
+     * with a [400-599] HTTP status code.
+     *
+     * @return a gauge holding the number of error responses returned by this connector; <tt>null</tt> if not available.
+     */
+    Gauge<Integer> getErrorsGauge();
+
+    /**
      * Retrieves the current request rate per second (QPS).
      *
      * @return a gauge holding the current request rate per second (QPS); <tt>null</tt> if not available.
      */
     Gauge<Integer> getQpsGauge();
+
+    /**
+     * Retrieves the number of bytes received by this connector.
+     *
+     * @return a gauge holding the number of bytes received by this connector; <tt>null</tt> if not available.
+     */
+    Gauge<Long> getReceivedBytesGauge();
+
+    /**
+     * Retrieves the number of bytes sent by this connector.
+     *
+     * @return a gauge holding the number of bytes sent by this connector; <tt>null</tt> if not available.
+     */
+    Gauge<Long> getSentBytesGauge();
 }

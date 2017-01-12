@@ -95,6 +95,11 @@ public class AppInfo {
             properties.load(AppInfo.class.getResourceAsStream(BUILD_INFO_PROPERTIES_FILE));
         } catch (Exception e) {
             logger.debug("Error loading the buildInfo file from the classpath: {}", BUILD_INFO_PROPERTIES_FILE, e);
+
+            if (InterruptedException.class.isInstance(e)) {
+                Thread.currentThread().interrupt();
+            }
+
             return appInfo;
         }
 

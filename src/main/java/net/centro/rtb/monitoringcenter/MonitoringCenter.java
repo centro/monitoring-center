@@ -740,6 +740,11 @@ public class MonitoringCenter {
             newConfig = Configurator.configFile(effectiveConfigFile).build();
         } catch (Exception e) {
             logger.error("Error while reloading MonitoringCenter config from {}", effectiveConfigFile.toString(), e);
+
+            if (InterruptedException.class.isInstance(e)) {
+                Thread.currentThread().interrupt();
+            }
+
             return;
         }
 

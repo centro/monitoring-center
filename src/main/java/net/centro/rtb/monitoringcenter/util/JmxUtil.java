@@ -60,6 +60,11 @@ public class JmxUtil {
             value = mBeanServer.getAttribute(targetObjectName, attributeName);
         } catch (Exception e) {
             logger.debug("Error while looking up attribute {} in the {} MxBean", attributeName, targetObjectName.getKeyPropertyListString(), e);
+
+            if (InterruptedException.class.isInstance(e)) {
+                Thread.currentThread().interrupt();
+            }
+
             return null;
         }
 
@@ -101,6 +106,11 @@ public class JmxUtil {
             value = mBeanServer.getAttribute(targetObjectName, attributeName);
         } catch (Exception e) {
             logger.debug("Error while looking up attribute {} in the {} MxBean", attributeName, targetObjectName.getKeyPropertyListString(), e);
+
+            if (InterruptedException.class.isInstance(e)) {
+                Thread.currentThread().interrupt();
+            }
+
             return defaultValue;
         }
 

@@ -62,7 +62,10 @@ class TomcatConnectorMetricSet implements MetricSet, TomcatConnectorStatus {
     private Gauge<Long> activeConnectionsGauge;
     private Gauge<Integer> maxConnectionsGauge;
     private Gauge<Integer> totalRequestsGauge;
+    private Gauge<Integer> errorsGauge;
     private Gauge<Integer> qpsGauge;
+    private Gauge<Long> receivedBytesGauge;
+    private Gauge<Long> sentBytesGauge;
 
     private Map<String, Metric> metricsByNames;
 
@@ -141,6 +144,21 @@ class TomcatConnectorMetricSet implements MetricSet, TomcatConnectorStatus {
                     }
                 };
                 metricsByNames.put("qps", qpsGauge);
+            }
+
+            this.errorsGauge = JmxUtil.getJmxAttributeAsGauge(globalRequestProcessorObjectName, "errorCount", Integer.class, 0);
+            if (errorsGauge != null) {
+                metricsByNames.put("errors", errorsGauge);
+            }
+
+            this.receivedBytesGauge = JmxUtil.getJmxAttributeAsGauge(globalRequestProcessorObjectName, "bytesReceived", Long.class, 0L);
+            if (receivedBytesGauge != null) {
+                metricsByNames.put("receivedBytes", receivedBytesGauge);
+            }
+
+            this.sentBytesGauge = JmxUtil.getJmxAttributeAsGauge(globalRequestProcessorObjectName, "bytesSent", Long.class, 0L);
+            if (sentBytesGauge != null) {
+                metricsByNames.put("sentBytes", sentBytesGauge);
             }
         }
 
@@ -231,8 +249,26 @@ class TomcatConnectorMetricSet implements MetricSet, TomcatConnectorStatus {
 
     @JsonProperty
     @Override
+    public Gauge<Integer> getErrorsGauge() {
+        return errorsGauge;
+    }
+
+    @JsonProperty
+    @Override
     public Gauge<Integer> getQpsGauge() {
         return qpsGauge;
+    }
+
+    @JsonProperty
+    @Override
+    public Gauge<Long> getReceivedBytesGauge() {
+        return receivedBytesGauge;
+    }
+
+    @JsonProperty
+    @Override
+    public Gauge<Long> getSentBytesGauge() {
+        return sentBytesGauge;
     }
 
     private static boolean isAjpFromName(String connectorName) {
