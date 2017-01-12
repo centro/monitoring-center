@@ -124,6 +124,10 @@ public class TomcatMetricSet implements MetricSet, TomcatStatus {
                             connectorMetricSet.updateQps();
                         } catch (Exception e) {
                             logger.debug("Error while updating QPS for connector {}", connectorMetricSet.getName(), e);
+
+                            if (InterruptedException.class.isInstance(e)) {
+                                Thread.currentThread().interrupt();
+                            }
                         }
                     }
                 }

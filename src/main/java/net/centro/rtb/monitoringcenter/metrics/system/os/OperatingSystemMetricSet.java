@@ -502,6 +502,10 @@ public class OperatingSystemMetricSet implements MetricSet, OperatingSystemStatu
             }
         } catch (Exception e) {
             logger.debug("Exception occurred while executing iostat command", e);
+
+            if (InterruptedException.class.isInstance(e)) {
+                Thread.currentThread().interrupt();
+            }
         }
 
         return null;

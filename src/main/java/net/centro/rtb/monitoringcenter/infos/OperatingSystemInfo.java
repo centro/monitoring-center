@@ -203,6 +203,10 @@ public class OperatingSystemInfo {
                         }
                     } catch (Exception e) {
                         logger.debug("Error while reading a Linux release file: {}", file.getAbsolutePath(), e);
+
+                        if (InterruptedException.class.isInstance(e)) {
+                            Thread.currentThread().interrupt();
+                        }
                     }
                 }
             }
