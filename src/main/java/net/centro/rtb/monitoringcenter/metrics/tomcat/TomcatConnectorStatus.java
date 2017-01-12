@@ -127,14 +127,14 @@ public interface TomcatConnectorStatus {
     /**
      * Retrieves the number of bytes received by this connector.
      *
-     * @returna gauge holding the number of bytes received by this connector; <tt>null</tt> if not available.
+     * @return a gauge holding the number of bytes received by this connector; <tt>null</tt> if not available.
      */
     Gauge<Long> getReceivedBytesGauge();
 
     /**
      * Retrieves the number of bytes sent by this connector.
      *
-     * @returna gauge holding the number of bytes sent by this connector; <tt>null</tt> if not available.
+     * @return a gauge holding the number of bytes sent by this connector; <tt>null</tt> if not available.
      */
     Gauge<Long> getSentBytesGauge();
 }
