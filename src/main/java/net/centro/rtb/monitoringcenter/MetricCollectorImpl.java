@@ -129,6 +129,8 @@ class MetricCollectorImpl implements MetricCollector {
         String namespace = null;
         if (names != null && names.length > 0) {
             namespace = buildFullName(names[0], Arrays.copyOfRange(names, 1, names.length), null);
+        } else {
+            namespace = collectorNamespace;
         }
 
         registerMetricSetImpl(metricSet, namespace);
