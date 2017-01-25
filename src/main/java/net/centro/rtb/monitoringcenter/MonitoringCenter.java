@@ -627,6 +627,7 @@ public class MonitoringCenter {
         }
 
         if (graphiteReporter != null) {
+            graphiteReporter.report();
             graphiteReporter.stop();
         }
 
