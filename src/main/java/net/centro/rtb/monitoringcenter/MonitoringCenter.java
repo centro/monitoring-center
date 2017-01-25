@@ -626,8 +626,8 @@ public class MonitoringCenter {
             MoreExecutors.shutdownAndAwaitTermination(executorService, 1, TimeUnit.SECONDS);
         }
 
-        graphiteReporter.report();
         if (graphiteReporter != null) {
+            graphiteReporter.report();
             graphiteReporter.stop();
         }
 
