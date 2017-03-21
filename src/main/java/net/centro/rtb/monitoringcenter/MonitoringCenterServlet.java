@@ -101,7 +101,10 @@ public class MonitoringCenterServlet extends HttpServlet {
         }
 
         public Map<String, String> getQueryParams() {
-            return Collections.unmodifiableMap(queryParams);
+            if (queryParams != null) {
+                return Collections.unmodifiableMap(queryParams);
+            }
+            return null;
         }
 
         @Override
