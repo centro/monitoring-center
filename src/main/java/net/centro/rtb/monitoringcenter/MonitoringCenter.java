@@ -719,8 +719,12 @@ public class MonitoringCenter {
                 public void run() {
                     try {
                         reloadConfig();
-                    } catch (Throwable e) {
-                        logger.error("Uncaught exception occurred while reloading the MonitoringCenter config", e);
+                    } catch (Exception e) {
+                        if (InterruptedException.class.isInstance(e)) {
+                            Thread.currentThread().interrupt();
+                        } else {
+                            logger.error("Uncaught exception occurred while reloading the MonitoringCenter config", e);
+                        }
                     }
                 }
             }, CONFIG_RELOAD_INTERVAL_IN_SECONDS, CONFIG_RELOAD_INTERVAL_IN_SECONDS, TimeUnit.SECONDS);
