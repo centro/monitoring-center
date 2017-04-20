@@ -40,7 +40,7 @@ public class MetricCollectionConfig {
      *
      * @return whether the collection of system metrics should be enabled or not.
      */
-    public boolean getEnableSystemMetrics() {
+    public boolean isEnableSystemMetrics() {
         return enableSystemMetrics;
     }
 
@@ -51,7 +51,7 @@ public class MetricCollectionConfig {
      *
      * @return whether the collection of Tomcat metrics should be enabled or not.
      */
-    public boolean getEnableTomcatMetrics() {
+    public boolean isEnableTomcatMetrics() {
         return enableTomcatMetrics;
     }
 

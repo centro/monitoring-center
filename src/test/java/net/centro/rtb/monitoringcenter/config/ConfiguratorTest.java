@@ -129,16 +129,16 @@ public class ConfiguratorTest {
                 .build();
 
         Assert.assertNull(monitoringCenterConfig.getConfigFile());
-        Assert.assertEquals(monitoringCenterConfig.getNamingConfig().getAppendTypeToHealthCheckNames(), true);
+        Assert.assertEquals(monitoringCenterConfig.getNamingConfig().isAppendTypeToHealthCheckNames(), true);
         Assert.assertEquals(monitoringCenterConfig.getNamingConfig().getApplicationName(), "applicationName");
         Assert.assertEquals(monitoringCenterConfig.getNamingConfig().getDatacenterName(), "datacenterName");
         Assert.assertEquals(monitoringCenterConfig.getNamingConfig().getNodeGroupName(), "nodeGroupName");
         Assert.assertEquals(monitoringCenterConfig.getNamingConfig().getNodeId(), "nodeId");
         Assert.assertEquals(monitoringCenterConfig.getNamingConfig().getMetricNamePostfixPolicy(), MetricNamePostfixPolicy.ADD_COMPOSITE_TYPES);
-        Assert.assertEquals(monitoringCenterConfig.getMetricCollectionConfig().getEnableSystemMetrics(), true);
-        Assert.assertEquals(monitoringCenterConfig.getMetricCollectionConfig().getEnableTomcatMetrics(), false);
-        Assert.assertEquals(monitoringCenterConfig.getMetricReportingConfig().getGraphiteReporterConfig().getEnableBatching(), false);
-        Assert.assertEquals(monitoringCenterConfig.getMetricReportingConfig().getGraphiteReporterConfig().getEnableReporter(), true);
+        Assert.assertEquals(monitoringCenterConfig.getMetricCollectionConfig().isEnableSystemMetrics(), true);
+        Assert.assertEquals(monitoringCenterConfig.getMetricCollectionConfig().isEnableTomcatMetrics(), false);
+        Assert.assertEquals(monitoringCenterConfig.getMetricReportingConfig().getGraphiteReporterConfig().isEnableBatching(), false);
+        Assert.assertEquals(monitoringCenterConfig.getMetricReportingConfig().getGraphiteReporterConfig().isEnableReporter(), true);
         Assert.assertEquals(monitoringCenterConfig.getMetricReportingConfig().getGraphiteReporterConfig().getAddress(), new HostAndPort("0.0.0.0", 80));
         Assert.assertTrue(monitoringCenterConfig.getMetricReportingConfig().getGraphiteReporterConfig().getStartsWithFilters().contains("system."));
         Assert.assertTrue(monitoringCenterConfig.getMetricReportingConfig().getGraphiteReporterConfig().getBlockedStartsWithFilters().contains("jvm.*"));

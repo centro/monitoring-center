@@ -73,15 +73,15 @@ public class ConfigFileUtil {
             namingConfigDto.setNodeGroupName(namingConfig.getNodeGroupName());
             namingConfigDto.setNodeId(namingConfig.getNodeId());
             namingConfigDto.setMetricNamePostfixPolicy(convertMetricNamePostfixPolicyToDto(namingConfig.getMetricNamePostfixPolicy()));
-            namingConfigDto.setAppendTypeToHealthCheckNames(namingConfig.getAppendTypeToHealthCheckNames());
+            namingConfigDto.setAppendTypeToHealthCheckNames(namingConfig.isAppendTypeToHealthCheckNames());
             configDto.setNamingConfig(namingConfigDto);
         }
 
         MetricCollectionConfig metricCollectionConfig = config.getMetricCollectionConfig();
         if (metricCollectionConfig != null) {
             MetricCollectionConfigDto metricCollectionConfigDto = new MetricCollectionConfigDto();
-            metricCollectionConfigDto.setEnableSystemMetrics(metricCollectionConfig.getEnableSystemMetrics());
-            metricCollectionConfigDto.setEnableTomcatMetrics(metricCollectionConfig.getEnableTomcatMetrics());
+            metricCollectionConfigDto.setEnableSystemMetrics(metricCollectionConfig.isEnableSystemMetrics());
+            metricCollectionConfigDto.setEnableTomcatMetrics(metricCollectionConfig.isEnableTomcatMetrics());
             configDto.setMetricCollectionConfig(metricCollectionConfigDto);
         }
 
@@ -92,9 +92,10 @@ public class ConfigFileUtil {
             GraphiteReporterConfig graphiteReporterConfig = metricReportingConfig.getGraphiteReporterConfig();
             if (graphiteReporterConfig != null) {
                 GraphiteReporterConfigDto graphiteReporterConfigDto = new GraphiteReporterConfigDto();
-                graphiteReporterConfigDto.setEnableReporter(graphiteReporterConfig.getEnableReporter());
+                graphiteReporterConfigDto.setEnableReporter(graphiteReporterConfig.isEnableReporter());
                 graphiteReporterConfigDto.setAddress(graphiteReporterConfig.getAddress());
-                graphiteReporterConfigDto.setEnableBatching(graphiteReporterConfig.getEnableBatching());
+                graphiteReporterConfigDto.setEnableBatching(graphiteReporterConfig.isEnableBatching());
+                graphiteReporterConfigDto.setReportOnShutdown(graphiteReporterConfig.isReportOnShutdown());
                 graphiteReporterConfigDto.setReportingIntervalInSeconds(graphiteReporterConfig.getReportingIntervalInSeconds());
                 graphiteReporterConfigDto.setStartsWithFilters(graphiteReporterConfig.getStartsWithFilters());
                 graphiteReporterConfigDto.setBlockedStartsWithFilters(graphiteReporterConfig.getBlockedStartsWithFilters());
@@ -170,6 +171,9 @@ public class ConfigFileUtil {
                     }
                     if (graphiteReporterConfigFromFile.getEnableBatching() != null) {
                         graphiteReporterConfigBuilder.enableBatching(graphiteReporterConfigFromFile.getEnableBatching());
+                    }
+                    if (graphiteReporterConfigFromFile.getReportOnShutdown() != null) {
+                        graphiteReporterConfigBuilder.reportOnShutdown(graphiteReporterConfigFromFile.getReportOnShutdown());
                     }
                     if (graphiteReporterConfigFromFile.getReportingIntervalInSeconds() != null) {
                         graphiteReporterConfigBuilder.reportingInterval(graphiteReporterConfigFromFile.getReportingIntervalInSeconds(), TimeUnit.SECONDS);

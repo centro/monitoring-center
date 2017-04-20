@@ -105,7 +105,7 @@ public class NamingConfig {
      *
      * @return whether type ("HealthCheck") should be appended to health check names or not.
      */
-    public boolean getAppendTypeToHealthCheckNames() {
+    public boolean isAppendTypeToHealthCheckNames() {
         return appendTypeToHealthCheckNames;
     }
 
