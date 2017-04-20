@@ -32,6 +32,7 @@ public class GraphiteReporterConfigDto {
     private HostAndPort address;
     private Long reportingIntervalInSeconds;
     private Boolean enableBatching;
+    private Boolean reportOnShutdown;
     private Set<String> startsWithFilters;
     private Set<String> blockedStartsWithFilters;
 
@@ -65,6 +66,14 @@ public class GraphiteReporterConfigDto {
 
     public void setEnableBatching(Boolean enableBatching) {
         this.enableBatching = enableBatching;
+    }
+
+    public Boolean getReportOnShutdown() {
+        return reportOnShutdown;
+    }
+
+    public void setReportOnShutdown(Boolean reportOnShutdown) {
+        this.reportOnShutdown = reportOnShutdown;
     }
 
     public Set<String> getStartsWithFilters() {

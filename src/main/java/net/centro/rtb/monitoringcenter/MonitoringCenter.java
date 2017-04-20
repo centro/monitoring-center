@@ -469,7 +469,7 @@ public class MonitoringCenter {
     /**
      * Registers a health check. This method is thread-safe. An attempt to register a health check, which has already
      * been registered will be a no-op. The actual name of the health check may contain a postfix, depending on the
-     * value returned by {@link NamingConfig#getAppendTypeToHealthCheckNames()}.
+     * value returned by {@link NamingConfig#isAppendTypeToHealthCheckNames()}.
      * <br><br>
      * All illegal characters contained in the provided name will be escaped as documented for
      * {@link net.centro.rtb.monitoringcenter.util.MetricNamingUtil#sanitize(String)}.
@@ -510,7 +510,7 @@ public class MonitoringCenter {
 
     /**
      * Executes a health check and returns its result. The actual name of the health check may contain a postfix,
-     * depending on the value returned by {@link NamingConfig#getAppendTypeToHealthCheckNames()}.
+     * depending on the value returned by {@link NamingConfig#isAppendTypeToHealthCheckNames()}.
      * <br><br>
      * All illegal characters contained in the provided name will be escaped as documented for
      * {@link net.centro.rtb.monitoringcenter.util.MetricNamingUtil#sanitize(String)}.
@@ -549,7 +549,7 @@ public class MonitoringCenter {
     /**
      * Removes a health check, effectively voiding its registration with the MonitoringCenter. The actual name of the
      * health check may contain a postfix, depending on the value returned by
-     * {@link NamingConfig#getAppendTypeToHealthCheckNames()}.
+     * {@link NamingConfig#isAppendTypeToHealthCheckNames()}.
      * <br><br>
      * All illegal characters contained in the provided name will be escaped as documented for
      * {@link net.centro.rtb.monitoringcenter.util.MetricNamingUtil#sanitize(String)}.
@@ -627,7 +627,13 @@ public class MonitoringCenter {
         }
 
         if (graphiteReporter != null) {
-            graphiteReporter.report();
+            MonitoringCenterConfig config = currentConfig;
+            if (config != null && config.getMetricReportingConfig() != null) {
+                GraphiteReporterConfig graphiteReporterConfig = config.getMetricReportingConfig().getGraphiteReporterConfig();
+                if (graphiteReporterConfig != null && graphiteReporterConfig.isReportOnShutdown()) {
+                    graphiteReporter.report();
+                }
+            }
             graphiteReporter.stop();
         }
 
@@ -684,12 +690,12 @@ public class MonitoringCenter {
         // Set up default metric sets
         MetricCollectionConfig metricCollectionConfig = config.getMetricCollectionConfig();
         if (metricCollectionConfig != null) {
-            if (metricCollectionConfig.getEnableSystemMetrics()) {
+            if (metricCollectionConfig.isEnableSystemMetrics()) {
                 systemMetricSet = new SystemMetricSet();
                 metricRegistry.register(SYSTEM_METRIC_NAMESPACE, systemMetricSet);
             }
 
-            if (metricCollectionConfig.getEnableTomcatMetrics()) {
+            if (metricCollectionConfig.isEnableTomcatMetrics()) {
                 tomcatMetricSet = new TomcatMetricSet();
                 metricRegistry.register(TOMCAT_METRIC_NAMESPACE, tomcatMetricSet);
             }
@@ -698,7 +704,7 @@ public class MonitoringCenter {
         // Configure reporters
         if (config.getMetricReportingConfig() != null) {
             GraphiteReporterConfig graphiteReporterConfig = config.getMetricReportingConfig().getGraphiteReporterConfig();
-            if (graphiteReporterConfig != null && graphiteReporterConfig.getEnableReporter()) {
+            if (graphiteReporterConfig != null && graphiteReporterConfig.isEnableReporter()) {
                 initGraphiteReporter(graphiteReporterConfig);
                 logger.info("Started GraphiteReporter: {}", graphiteReporterConfig.toString());
             }
@@ -758,13 +764,13 @@ public class MonitoringCenter {
         if (newMetricCollectionConfig != null) {     // If it's null, something is wrong, so keep old values
             MetricCollectionConfig oldMetricCollectionConfig = currentConfig.getMetricCollectionConfig();
 
-            if (newMetricCollectionConfig.getEnableSystemMetrics()) {
-                if (oldMetricCollectionConfig == null || !oldMetricCollectionConfig.getEnableSystemMetrics()) {
+            if (newMetricCollectionConfig.isEnableSystemMetrics()) {
+                if (oldMetricCollectionConfig == null || !oldMetricCollectionConfig.isEnableSystemMetrics()) {
                     systemMetricSet = new SystemMetricSet();
                     metricRegistry.register(SYSTEM_METRIC_NAMESPACE, systemMetricSet);
                 }
             } else {
-                if (oldMetricCollectionConfig != null && oldMetricCollectionConfig.getEnableSystemMetrics()) {
+                if (oldMetricCollectionConfig != null && oldMetricCollectionConfig.isEnableSystemMetrics()) {
                     if (systemMetricSet != null) {
                         metricRegistry.removeMatching(new MetricFilter() {
                             @Override
@@ -778,13 +784,13 @@ public class MonitoringCenter {
                 }
             }
 
-            if (newMetricCollectionConfig.getEnableTomcatMetrics()) {
-                if (oldMetricCollectionConfig == null || !oldMetricCollectionConfig.getEnableTomcatMetrics()) {
+            if (newMetricCollectionConfig.isEnableTomcatMetrics()) {
+                if (oldMetricCollectionConfig == null || !oldMetricCollectionConfig.isEnableTomcatMetrics()) {
                     tomcatMetricSet = new TomcatMetricSet();
                     metricRegistry.register(TOMCAT_METRIC_NAMESPACE, tomcatMetricSet);
                 }
             } else {
-                if (oldMetricCollectionConfig != null && oldMetricCollectionConfig.getEnableTomcatMetrics()) {
+                if (oldMetricCollectionConfig != null && oldMetricCollectionConfig.isEnableTomcatMetrics()) {
                     if (tomcatMetricSet != null) {
                         metricRegistry.removeMatching(new MetricFilter() {
                             @Override
@@ -810,12 +816,12 @@ public class MonitoringCenter {
             newGraphiteReporterConfig = newConfig.getMetricReportingConfig().getGraphiteReporterConfig();
         }
 
-        if (graphiteReporter != null && (oldGraphiteReporterConfig != null && oldGraphiteReporterConfig.getEnableReporter())) {
+        if (graphiteReporter != null && (oldGraphiteReporterConfig != null && oldGraphiteReporterConfig.isEnableReporter())) {
             if (newGraphiteReporterConfig == null || !newGraphiteReporterConfig.equals(oldGraphiteReporterConfig)) {
                 graphiteReporter.stop();
                 graphiteReporter = null;
 
-                if (newGraphiteReporterConfig != null && newGraphiteReporterConfig.getEnableReporter()) {
+                if (newGraphiteReporterConfig != null && newGraphiteReporterConfig.isEnableReporter()) {
                     initGraphiteReporter(newGraphiteReporterConfig);
                     logger.info("GraphiteReporter has been updated: {}", newGraphiteReporterConfig.toString());
                 } else {
@@ -823,7 +829,7 @@ public class MonitoringCenter {
                 }
             }
         } else {
-            if (newGraphiteReporterConfig != null && newGraphiteReporterConfig.getEnableReporter()) {
+            if (newGraphiteReporterConfig != null && newGraphiteReporterConfig.isEnableReporter()) {
                 initGraphiteReporter(newGraphiteReporterConfig);
                 logger.info("Started GraphiteReporter: {}", newGraphiteReporterConfig.toString());
             }
@@ -836,7 +842,7 @@ public class MonitoringCenter {
         HostAndPort hostAndPort = graphiteReporterConfig.getAddress();
         InetSocketAddress inetSocketAddress = new InetSocketAddress(hostAndPort.getHost(), hostAndPort.getPort());
 
-        GraphiteSender graphiteSender = graphiteReporterConfig.getEnableBatching()
+        GraphiteSender graphiteSender = graphiteReporterConfig.isEnableBatching()
                 ? new PickledGraphite(inetSocketAddress)
                 : new Graphite(inetSocketAddress);
 
@@ -874,7 +880,7 @@ public class MonitoringCenter {
         Preconditions.checkArgument(StringUtils.isNotBlank(name), "name cannot be blank");
 
         String sanitizedName = MetricNamingUtil.sanitize(name);
-        if (initialConfig.getNamingConfig() != null && initialConfig.getNamingConfig().getAppendTypeToHealthCheckNames()) {
+        if (initialConfig.getNamingConfig() != null && initialConfig.getNamingConfig().isAppendTypeToHealthCheckNames()) {
             if (!sanitizedName.endsWith(HEALTH_CHECK_POSTFIX)) {
                 sanitizedName += HEALTH_CHECK_POSTFIX;
             }

@@ -191,6 +191,9 @@ metricCollection:
   enableTomcatMetrics: true #Default: false.
 metricReporting:
   graphite: #Config for Graphite push reporter.
+    enableReporter: true #Default: true (provided the reporter is configured at all).
+    enableBatching: true #Default: true.
+    reportOnShutdown: false #Default: true.
     address:    #The only required field for the Graphite reporter config.
       host: "graphiteHost.com"
       port: 8080

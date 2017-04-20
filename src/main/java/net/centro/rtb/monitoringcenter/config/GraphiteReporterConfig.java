@@ -36,6 +36,7 @@ public class GraphiteReporterConfig {
     private HostAndPort address;
     private long reportingIntervalInSeconds;
     private boolean enableBatching;
+    private boolean reportOnShutdown;
     private Set<String> startsWithFilters;
     private Set<String> blockedStartsWithFilters;
 
@@ -44,6 +45,7 @@ public class GraphiteReporterConfig {
         this.address = builder.address;
         this.reportingIntervalInSeconds = builder.reportingIntervalInSeconds;
         this.enableBatching = builder.enableBatching;
+        this.reportOnShutdown = builder.reportOnShutdown;
         this.startsWithFilters = Collections.unmodifiableSet(builder.startsWithFilters);
         this.blockedStartsWithFilters = Collections.unmodifiableSet(builder.blockedStartsWithFilters);
     }
@@ -53,7 +55,7 @@ public class GraphiteReporterConfig {
      *
      * @return whether the reporter should be enabled or not.
      */
-    public boolean getEnableReporter() {
+    public boolean isEnableReporter() {
         return enableReporter;
     }
 
@@ -82,8 +84,19 @@ public class GraphiteReporterConfig {
      *
      * @return whether the Graphite reporter should employ batching or not.
      */
-    public boolean getEnableBatching() {
+    public boolean isEnableBatching() {
         return enableBatching;
+    }
+
+    /**
+     * Indicates whether metrics should be published to Graphite prior to shutting down the reporter or not.
+     * By default, this feature is enabled. One may want to disable this feature to avoid inconsistencies when
+     * Carbon aggregations are enabled on the Graphite side.
+     *
+     * @return whether metrics should be reported prior to shutting down or not.
+     */
+    public boolean isReportOnShutdown() {
+        return reportOnShutdown;
     }
 
     /**
@@ -116,11 +129,11 @@ public class GraphiteReporterConfig {
         if (enableReporter != that.enableReporter) return false;
         if (reportingIntervalInSeconds != that.reportingIntervalInSeconds) return false;
         if (enableBatching != that.enableBatching) return false;
+        if (reportOnShutdown != that.reportOnShutdown) return false;
         if (address != null ? !address.equals(that.address) : that.address != null) return false;
         if (startsWithFilters != null ? !startsWithFilters.equals(that.startsWithFilters) : that.startsWithFilters != null)
             return false;
         return blockedStartsWithFilters != null ? blockedStartsWithFilters.equals(that.blockedStartsWithFilters) : that.blockedStartsWithFilters == null;
-
     }
 
     @Override
@@ -129,6 +142,7 @@ public class GraphiteReporterConfig {
         result = 31 * result + (address != null ? address.hashCode() : 0);
         result = 31 * result + (int) (reportingIntervalInSeconds ^ (reportingIntervalInSeconds >>> 32));
         result = 31 * result + (enableBatching ? 1 : 0);
+        result = 31 * result + (reportOnShutdown ? 1 : 0);
         result = 31 * result + (startsWithFilters != null ? startsWithFilters.hashCode() : 0);
         result = 31 * result + (blockedStartsWithFilters != null ? blockedStartsWithFilters.hashCode() : 0);
         return result;
@@ -141,6 +155,7 @@ public class GraphiteReporterConfig {
         sb.append(", address=").append(address);
         sb.append(", reportingIntervalInSeconds=").append(reportingIntervalInSeconds);
         sb.append(", enableBatching=").append(enableBatching);
+        sb.append(", reportOnShutdown=").append(reportOnShutdown);
         sb.append(", startsWithFilters=").append(startsWithFilters);
         sb.append(", blockedStartsWithFilters=").append(blockedStartsWithFilters);
         sb.append('}');
@@ -158,6 +173,7 @@ public class GraphiteReporterConfig {
         private HostAndPort address;
         private long reportingIntervalInSeconds;
         private boolean enableBatching;
+        private boolean reportOnShutdown;
         private Set<String> startsWithFilters;
         private Set<String> blockedStartsWithFilters;
 
@@ -165,6 +181,7 @@ public class GraphiteReporterConfig {
             this.enableReporter = true;
             this.reportingIntervalInSeconds = DEFAULT_REPORTING_INTERVAL_IN_SECONDS;
             this.enableBatching = true;
+            this.reportOnShutdown = true;
             this.startsWithFilters = Collections.emptySet();
             this.blockedStartsWithFilters = Collections.emptySet();
         }
@@ -226,6 +243,19 @@ public class GraphiteReporterConfig {
          */
         public Builder enableBatching(boolean enableBatching) {
             this.enableBatching = enableBatching;
+            return this;
+        }
+
+        /**
+         * Indicates whether metrics should be published to Graphite prior to shutting down the reporter or not.
+         * By default, this feature is enabled. One may want to disable this feature to avoid inconsistencies when
+         * Carbon aggregations are enabled on the Graphite side.
+         *
+         * @param reportOnShutdown indicates whether metrics should be reported prior to shutting down or not.
+         * @return this builder.
+         */
+        public Builder reportOnShutdown(boolean reportOnShutdown) {
+            this.reportOnShutdown = reportOnShutdown;
             return this;
         }
 
