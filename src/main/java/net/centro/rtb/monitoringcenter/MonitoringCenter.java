@@ -21,6 +21,7 @@
 
 package net.centro.rtb.monitoringcenter;
 
+import com.codahale.metrics.Clock;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
@@ -850,6 +851,24 @@ public class MonitoringCenter {
                 .prefixedWith(prefix)
                 .convertRatesTo(TimeUnit.SECONDS)
                 .convertDurationsTo(TimeUnit.MICROSECONDS)
+                .withClock(new Clock() {
+                    private long lastReportingTime = 0;
+
+                    @Override
+                    public long getTick() {
+                        return System.nanoTime();
+                    }
+
+                    @Override
+                    public synchronized long getTime() {
+                        if (lastReportingTime == 0) {
+                            lastReportingTime = System.currentTimeMillis();
+                            return lastReportingTime;
+                        }
+                        lastReportingTime += graphiteReporterConfig.getReportingIntervalInSeconds() * 1000;
+                        return lastReportingTime;
+                    }
+                })
                 .filter(new MetricFilter() {
                     @Override
                     public boolean matches(String name, Metric metric) {
