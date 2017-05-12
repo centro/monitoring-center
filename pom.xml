@@ -5,7 +5,7 @@
     <groupId>net.centro.rtb</groupId>
     <artifactId>monitoring-center</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.9</version>
+    <version>1.0.10</version>
     <name>MonitoringCenter</name>
     <description>MonitoringCenter is an easy-to-use, comprehensive framework for programmatically monitoring Java
         applications.
@@ -60,7 +60,7 @@
         <javac.target.version>1.7</javac.target.version>
 
         <jackson.version>2.7.8</jackson.version>
-        <metrics.version>3.1.2</metrics.version>
+        <metrics.version>3.2.2</metrics.version>
     </properties>
 
     <dependencies>
