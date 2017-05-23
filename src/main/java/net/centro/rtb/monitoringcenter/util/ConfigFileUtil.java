@@ -27,12 +27,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import net.centro.rtb.monitoringcenter.config.GraphiteReporterConfig;
 import net.centro.rtb.monitoringcenter.config.HostAndPort;
+import net.centro.rtb.monitoringcenter.config.JmxReporterConfig;
 import net.centro.rtb.monitoringcenter.config.MetricCollectionConfig;
 import net.centro.rtb.monitoringcenter.config.MetricNamePostfixPolicy;
 import net.centro.rtb.monitoringcenter.config.MetricReportingConfig;
 import net.centro.rtb.monitoringcenter.config.MonitoringCenterConfig;
 import net.centro.rtb.monitoringcenter.config.NamingConfig;
 import net.centro.rtb.monitoringcenter.config.dto.GraphiteReporterConfigDto;
+import net.centro.rtb.monitoringcenter.config.dto.JmxReporterConfigDto;
 import net.centro.rtb.monitoringcenter.config.dto.MetricCollectionConfigDto;
 import net.centro.rtb.monitoringcenter.config.dto.MetricNamePostfixPolicyDto;
 import net.centro.rtb.monitoringcenter.config.dto.MetricReportingConfigDto;
@@ -100,6 +102,15 @@ public class ConfigFileUtil {
                 graphiteReporterConfigDto.setStartsWithFilters(graphiteReporterConfig.getStartsWithFilters());
                 graphiteReporterConfigDto.setBlockedStartsWithFilters(graphiteReporterConfig.getBlockedStartsWithFilters());
                 metricReportingConfigDto.setGraphiteReporterConfig(graphiteReporterConfigDto);
+            }
+
+            JmxReporterConfig jmxReporterConfig = metricReportingConfig.getJmxReporterConfig();
+            if (jmxReporterConfig != null) {
+                JmxReporterConfigDto jmxReporterConfigDto = new JmxReporterConfigDto();
+                jmxReporterConfigDto.setEnableReporter(jmxReporterConfig.isEnableReporter());
+                jmxReporterConfigDto.setStartsWithFilters(jmxReporterConfig.getStartsWithFilters());
+                jmxReporterConfigDto.setBlockedStartsWithFilters(jmxReporterConfig.getBlockedStartsWithFilters());
+                metricReportingConfigDto.setJmxReporterConfig(jmxReporterConfigDto);
             }
 
             configDto.setMetricReportingConfig(metricReportingConfigDto);
@@ -189,6 +200,21 @@ public class ConfigFileUtil {
                         graphiteReporterConfigBuilder.blockedStartsWithFilters(graphiteReporterConfigFromFile.getBlockedStartsWithFilters());
                     }
                     configBuilder.graphiteReporterConfig(graphiteReporterConfigBuilder.build());
+                }
+
+                JmxReporterConfigDto jmxReporterConfigFromFile = reportingConfigFromFile.getJmxReporterConfig();
+                if (jmxReporterConfigFromFile != null) {
+                    JmxReporterConfig.Builder jmxReporterConfigBuilder = JmxReporterConfig.builder();
+                    if (jmxReporterConfigFromFile.getEnableReporter() != null) {
+                        jmxReporterConfigBuilder.enableReporter(jmxReporterConfigFromFile.getEnableReporter());
+                    }
+                    if (jmxReporterConfigFromFile.getStartsWithFilters() != null) {
+                        jmxReporterConfigBuilder.startsWithFilters(jmxReporterConfigFromFile.getStartsWithFilters());
+                    }
+                    if (jmxReporterConfigFromFile.getBlockedStartsWithFilters() != null) {
+                        jmxReporterConfigBuilder.blockedStartsWithFilters(jmxReporterConfigFromFile.getBlockedStartsWithFilters());
+                    }
+                    configBuilder.jmxReporterConfig(jmxReporterConfigBuilder.build());
                 }
             }
         }

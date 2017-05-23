@@ -27,9 +27,11 @@ package net.centro.rtb.monitoringcenter.config;
  */
 public class MetricReportingConfig {
     private GraphiteReporterConfig graphiteReporterConfig;
+    private JmxReporterConfig jmxReporterConfig;
 
-    MetricReportingConfig(GraphiteReporterConfig graphiteReporterConfig) {
+    MetricReportingConfig(GraphiteReporterConfig graphiteReporterConfig, JmxReporterConfig jmxReporterConfig) {
         this.graphiteReporterConfig = graphiteReporterConfig;
+        this.jmxReporterConfig = jmxReporterConfig;
     }
 
     /**
@@ -41,10 +43,39 @@ public class MetricReportingConfig {
         return graphiteReporterConfig;
     }
 
+    /**
+     * Retrieves the JMX reporter configuration.
+     *
+     * @return the JMX reporter configuration.
+     */
+    public JmxReporterConfig getJmxReporterConfig() {
+        return jmxReporterConfig;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MetricReportingConfig that = (MetricReportingConfig) o;
+
+        if (graphiteReporterConfig != null ? !graphiteReporterConfig.equals(that.graphiteReporterConfig) : that.graphiteReporterConfig != null)
+            return false;
+        return jmxReporterConfig != null ? jmxReporterConfig.equals(that.jmxReporterConfig) : that.jmxReporterConfig == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = graphiteReporterConfig != null ? graphiteReporterConfig.hashCode() : 0;
+        result = 31 * result + (jmxReporterConfig != null ? jmxReporterConfig.hashCode() : 0);
+        return result;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("MetricReportingConfig{");
         sb.append("graphiteReporterConfig=").append(graphiteReporterConfig);
+        sb.append(", jmxReporterConfig=").append(jmxReporterConfig);
         sb.append('}');
         return sb.toString();
     }

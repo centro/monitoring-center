@@ -22,28 +22,36 @@
 package net.centro.rtb.monitoringcenter.config.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class MetricReportingConfigDto {
-    @JsonProperty("graphite")
-    private GraphiteReporterConfigDto graphiteReporterConfig;
-    @JsonProperty("jmx")
-    private JmxReporterConfigDto jmxReporterConfig;
+public class JmxReporterConfigDto {
+    private Boolean enableReporter;
+    private Set<String> startsWithFilters;
+    private Set<String> blockedStartsWithFilters;
 
-    public GraphiteReporterConfigDto getGraphiteReporterConfig() {
-        return graphiteReporterConfig;
+    public Boolean getEnableReporter() {
+        return enableReporter;
     }
 
-    public void setGraphiteReporterConfig(GraphiteReporterConfigDto graphiteReporterConfig) {
-        this.graphiteReporterConfig = graphiteReporterConfig;
+    public void setEnableReporter(Boolean enableReporter) {
+        this.enableReporter = enableReporter;
     }
 
-    public JmxReporterConfigDto getJmxReporterConfig() {
-        return jmxReporterConfig;
+    public Set<String> getStartsWithFilters() {
+        return startsWithFilters;
     }
 
-    public void setJmxReporterConfig(JmxReporterConfigDto jmxReporterConfig) {
-        this.jmxReporterConfig = jmxReporterConfig;
+    public void setStartsWithFilters(Set<String> startsWithFilters) {
+        this.startsWithFilters = startsWithFilters;
+    }
+
+    public Set<String> getBlockedStartsWithFilters() {
+        return blockedStartsWithFilters;
+    }
+
+    public void setBlockedStartsWithFilters(Set<String> blockedStartsWithFilters) {
+        this.blockedStartsWithFilters = blockedStartsWithFilters;
     }
 }

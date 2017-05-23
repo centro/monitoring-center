@@ -56,6 +56,24 @@ public class MetricCollectionConfig {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MetricCollectionConfig that = (MetricCollectionConfig) o;
+
+        if (enableSystemMetrics != that.enableSystemMetrics) return false;
+        return enableTomcatMetrics == that.enableTomcatMetrics;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (enableSystemMetrics ? 1 : 0);
+        result = 31 * result + (enableTomcatMetrics ? 1 : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("MetricCollectionConfig{");
         sb.append("enableSystemMetrics=").append(enableSystemMetrics);
