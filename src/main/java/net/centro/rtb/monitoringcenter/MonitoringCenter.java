@@ -21,15 +21,7 @@
 
 package net.centro.rtb.monitoringcenter;
 
-import com.codahale.metrics.Clock;
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.Metric;
-import com.codahale.metrics.MetricFilter;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
+import com.codahale.metrics.*;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import com.codahale.metrics.graphite.GraphiteSender;
@@ -37,11 +29,17 @@ import com.codahale.metrics.graphite.PickledGraphite;
 import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.google.common.base.Preconditions;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import net.centro.rtb.monitoringcenter.config.Configurator;
 import net.centro.rtb.monitoringcenter.config.GraphiteReporterConfig;
 import net.centro.rtb.monitoringcenter.config.HostAndPort;
+import net.centro.rtb.monitoringcenter.config.JmxReporterConfig;
 import net.centro.rtb.monitoringcenter.config.MetricCollectionConfig;
 import net.centro.rtb.monitoringcenter.config.MonitoringCenterConfig;
 import net.centro.rtb.monitoringcenter.config.NamingConfig;
@@ -67,6 +65,8 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -128,7 +128,11 @@ public class MonitoringCenter {
     private static ScheduledExecutorService executorService;
 
     private static MetricRegistry metricRegistry;
+
     private static GraphiteReporter graphiteReporter;
+    private static JmxReporter jmxReporter;
+    private static ConsoleReporter consoleReporter;
+    private static Cache<String, Slf4jReporter> slf4jReportersByLoggerNames;
 
     private static HealthCheckRegistry healthCheckRegistry;
 
@@ -468,6 +472,48 @@ public class MonitoringCenter {
     }
 
     /**
+     * Outputs all registered metrics to the standard output stream (<tt>System.out</tt>).
+     */
+    public static void reportMetricsToConsole() {
+        if (!configured.get()) {
+            return;
+        }
+        Preconditions.checkState(consoleReporter != null, "consoleReporter cannot be null");
+        consoleReporter.report();
+    }
+
+    /**
+     * Outputs all registered metrics to an SLF4J logger.
+     *
+     * @param logger an SLF4J logger to output metrics to.
+     */
+    public static void reportMetricsToLogger(final Logger logger) {
+        Preconditions.checkNotNull(logger, "logger cannot be null");
+        if (!configured.get()) {
+            return;
+        }
+        Preconditions.checkState(slf4jReportersByLoggerNames != null, "slf4jReportersByLoggerNames cannot be null");
+
+        Slf4jReporter slf4jReporter = null;
+        try {
+             slf4jReporter = slf4jReportersByLoggerNames.get(logger.getName(), new Callable<Slf4jReporter>() {
+                @Override
+                public Slf4jReporter call() throws Exception {
+                    return Slf4jReporter.forRegistry(metricRegistry)
+                            .convertRatesTo(TimeUnit.SECONDS)
+                            .convertDurationsTo(TimeUnit.MICROSECONDS)
+                            .outputTo(logger)
+                            .build();
+                }
+            });
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            throw new RuntimeException("Exception while initializing an SLF4J reporter", e.getCause());
+        }
+
+        slf4jReporter.report();
+    }
+
+    /**
      * Registers a health check. This method is thread-safe. An attempt to register a health check, which has already
      * been registered will be a no-op. The actual name of the health check may contain a postfix, depending on the
      * value returned by {@link NamingConfig#isAppendTypeToHealthCheckNames()}.
@@ -638,6 +684,20 @@ public class MonitoringCenter {
             graphiteReporter.stop();
         }
 
+        if (jmxReporter != null) {
+            jmxReporter.stop();
+        }
+
+        if (consoleReporter != null) {
+            consoleReporter.stop();
+        }
+
+        if (slf4jReportersByLoggerNames != null) {
+            for (Slf4jReporter slf4jReporter : slf4jReportersByLoggerNames.asMap().values()) {
+                slf4jReporter.stop();
+            }
+        }
+
         if (systemMetricSet != null) {
             systemMetricSet.shutdown();
         }
@@ -703,11 +763,38 @@ public class MonitoringCenter {
         }
 
         // Configure reporters
+        consoleReporter = ConsoleReporter.forRegistry(metricRegistry)
+                .convertRatesTo(TimeUnit.SECONDS)
+                .convertDurationsTo(TimeUnit.MICROSECONDS)
+                .build();
+        slf4jReportersByLoggerNames = CacheBuilder.newBuilder()
+                .expireAfterAccess(15, TimeUnit.MINUTES)
+                .maximumSize(10)
+                .removalListener(new RemovalListener<String, Slf4jReporter>() {
+                    @Override
+                    public void onRemoval(RemovalNotification<String, Slf4jReporter> notification) {
+                        if (notification.getValue() != null) {
+                            try {
+                                notification.getValue().stop();
+                            } catch (RuntimeException e) {
+                                logger.error("Exception closing an SLF4J reporter", e);
+                            }
+                        }
+                    }
+                })
+                .build();
+
         if (config.getMetricReportingConfig() != null) {
             GraphiteReporterConfig graphiteReporterConfig = config.getMetricReportingConfig().getGraphiteReporterConfig();
             if (graphiteReporterConfig != null && graphiteReporterConfig.isEnableReporter()) {
                 initGraphiteReporter(graphiteReporterConfig);
                 logger.info("Started GraphiteReporter: {}", graphiteReporterConfig.toString());
+            }
+
+            JmxReporterConfig jmxReporterConfig = config.getMetricReportingConfig().getJmxReporterConfig();
+            if (jmxReporterConfig != null && jmxReporterConfig.isEnableReporter()) {
+                initJmxReporter(jmxReporterConfig);
+                logger.info("Started JmxReporter: {}", jmxReporterConfig.toString());
             }
         }
 
@@ -836,6 +923,36 @@ public class MonitoringCenter {
             }
         }
 
+        // Reload JmxReporter
+        JmxReporterConfig oldJmxReporterConfig = null;
+        if (currentConfig.getMetricReportingConfig() != null) {
+            oldJmxReporterConfig = currentConfig.getMetricReportingConfig().getJmxReporterConfig();
+        }
+
+        JmxReporterConfig newJmxReporterConfig = null;
+        if (newConfig.getMetricReportingConfig() != null) {
+            newJmxReporterConfig = newConfig.getMetricReportingConfig().getJmxReporterConfig();
+        }
+
+        if (jmxReporter != null && (oldJmxReporterConfig != null && oldJmxReporterConfig.isEnableReporter())) {
+            if (newJmxReporterConfig == null || !newJmxReporterConfig.equals(oldJmxReporterConfig)) {
+                jmxReporter.stop();
+                jmxReporter = null;
+
+                if (newJmxReporterConfig != null && newJmxReporterConfig.isEnableReporter()) {
+                    initJmxReporter(newJmxReporterConfig);
+                    logger.info("JmxReporter has been updated: {}", newJmxReporterConfig.toString());
+                } else {
+                    logger.info("JmxReporter has been turned off");
+                }
+            }
+        } else {
+            if (newJmxReporterConfig != null && newJmxReporterConfig.isEnableReporter()) {
+                initJmxReporter(newJmxReporterConfig);
+                logger.info("Started JmxReporter: {}", newJmxReporterConfig.toString());
+            }
+        }
+
         currentConfig = newConfig;
     }
 
@@ -869,30 +986,44 @@ public class MonitoringCenter {
                         return lastReportingTime;
                     }
                 })
-                .filter(new MetricFilter() {
-                    @Override
-                    public boolean matches(String name, Metric metric) {
-                        boolean passedWhitelist = false;
-                        if (graphiteReporterConfig.getStartsWithFilters().isEmpty()) {
-                            passedWhitelist = true;
-                        } else {
-                            passedWhitelist = matchesStartsWithFilters(name, graphiteReporterConfig.getStartsWithFilters().toArray(new String[] {}));
-                        }
-
-                        if (!passedWhitelist) {
-                            return false;
-                        }
-
-                        if (graphiteReporterConfig.getBlockedStartsWithFilters().isEmpty()) {
-                            return true;
-                        } else {
-                            return !matchesStartsWithFilters(name, graphiteReporterConfig.getBlockedStartsWithFilters().toArray(new String[] {}));
-                        }
-                    }
-                })
+                .filter(buildMetricFilter(graphiteReporterConfig.getStartsWithFilters(), graphiteReporterConfig.getBlockedStartsWithFilters()))
                 .build(graphiteSender);
 
         graphiteReporter.start(graphiteReporterConfig.getReportingIntervalInSeconds(), TimeUnit.SECONDS);
+    }
+
+    private static void initJmxReporter(final JmxReporterConfig jmxReporterConfig) {
+        jmxReporter = JmxReporter.forRegistry(metricRegistry)
+                .convertRatesTo(TimeUnit.SECONDS)
+                .convertDurationsTo(TimeUnit.MICROSECONDS)
+                .filter(buildMetricFilter(jmxReporterConfig.getStartsWithFilters(), jmxReporterConfig.getBlockedStartsWithFilters()))
+                .build();
+
+        jmxReporter.start();
+    }
+
+    private static MetricFilter buildMetricFilter(final Set<String> startsWithFilters, final Set<String> blockedStartsWithFilters) {
+        return new MetricFilter() {
+            @Override
+            public boolean matches(String name, Metric metric) {
+                boolean passedWhitelist = false;
+                if (startsWithFilters == null || startsWithFilters.isEmpty()) {
+                    passedWhitelist = true;
+                } else {
+                    passedWhitelist = matchesStartsWithFilters(name, startsWithFilters.toArray(new String[] {}));
+                }
+
+                if (!passedWhitelist) {
+                    return false;
+                }
+
+                if (blockedStartsWithFilters == null || blockedStartsWithFilters.isEmpty()) {
+                    return true;
+                } else {
+                    return !matchesStartsWithFilters(name, blockedStartsWithFilters.toArray(new String[] {}));
+                }
+            }
+        };
     }
 
     private static String normalizeHealthCheckName(String name) {

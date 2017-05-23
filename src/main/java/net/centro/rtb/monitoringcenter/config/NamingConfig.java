@@ -110,6 +110,35 @@ public class NamingConfig {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        NamingConfig that = (NamingConfig) o;
+
+        if (appendTypeToHealthCheckNames != that.appendTypeToHealthCheckNames) return false;
+        if (applicationName != null ? !applicationName.equals(that.applicationName) : that.applicationName != null)
+            return false;
+        if (datacenterName != null ? !datacenterName.equals(that.datacenterName) : that.datacenterName != null)
+            return false;
+        if (nodeGroupName != null ? !nodeGroupName.equals(that.nodeGroupName) : that.nodeGroupName != null)
+            return false;
+        if (nodeId != null ? !nodeId.equals(that.nodeId) : that.nodeId != null) return false;
+        return metricNamePostfixPolicy == that.metricNamePostfixPolicy;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = applicationName != null ? applicationName.hashCode() : 0;
+        result = 31 * result + (datacenterName != null ? datacenterName.hashCode() : 0);
+        result = 31 * result + (nodeGroupName != null ? nodeGroupName.hashCode() : 0);
+        result = 31 * result + (nodeId != null ? nodeId.hashCode() : 0);
+        result = 31 * result + (metricNamePostfixPolicy != null ? metricNamePostfixPolicy.hashCode() : 0);
+        result = 31 * result + (appendTypeToHealthCheckNames ? 1 : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("NamingConfig{");
         sb.append("applicationName='").append(applicationName).append('\'');

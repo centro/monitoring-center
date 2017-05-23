@@ -43,7 +43,7 @@ public class MonitoringCenterConfig {
         this.namingConfig = new NamingConfig(builder.applicationName, builder.datacenterName, builder.nodeGroupName,
                 builder.nodeId, builder.metricNamePostfixPolicy, builder.appendTypeToHealthCheckNames);
         this.metricCollectionConfig = new MetricCollectionConfig(builder.enableSystemMetrics, builder.enableTomcatMetrics);
-        this.metricReportingConfig = new MetricReportingConfig(builder.graphiteReporterConfig);
+        this.metricReportingConfig = new MetricReportingConfig(builder.graphiteReporterConfig, builder.jmxReporterConfig);
     }
 
     /**
@@ -119,6 +119,7 @@ public class MonitoringCenterConfig {
         private boolean enableTomcatMetrics;
 
         private GraphiteReporterConfig graphiteReporterConfig;
+        private JmxReporterConfig jmxReporterConfig;
 
         private File configFile;
 
@@ -274,6 +275,17 @@ public class MonitoringCenterConfig {
          */
         public Builder graphiteReporterConfig(GraphiteReporterConfig graphiteReporterConfig) {
             this.graphiteReporterConfig = graphiteReporterConfig;
+            return this;
+        }
+
+        /**
+         * Sets the configuration for the JmxReporter. By default, the JmxReporter will not be configured.
+         *
+         * @param jmxReporterConfig a JMX reporter configuration.
+         * @return this builder.
+         */
+        public Builder jmxReporterConfig(JmxReporterConfig jmxReporterConfig) {
+            this.jmxReporterConfig = jmxReporterConfig;
             return this;
         }
 

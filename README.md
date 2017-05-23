@@ -202,6 +202,12 @@ metricReporting:
       - "tomcat.connectors.*."  #A filter may contain multiple wildcards, expressed as *.
     blockedStartsWithFilters:  #A list of blacklist filters. A metric satisfies a filter, if its name starts with the filter.
       - "tomcat.connectors.http-apr-443."  #Blocked (i.e., blacklist) filters trump the whitelist filters.  
+  jmx: #Config for JMX reporter.
+    enableReporter: true #Default: true (provided the reporter is configured at all).
+    startsWithFilters:  #A list of whitelist filters. A metric satisfies a filter, if its name starts with the filter.
+      - "tomcat.connectors.*."  #A filter may contain multiple wildcards, expressed as *.
+    blockedStartsWithFilters:  #A list of blacklist filters. A metric satisfies a filter, if its name starts with the filter.
+      - "tomcat.connectors.http-apr-443."  #Blocked (i.e., blacklist) filters trump the whitelist filters.  
 ```
 
 ###### Reloadability
@@ -261,9 +267,11 @@ one in order for the metrics to be recorded.
 
 #### Metric Reporting
 Metrics can be reported in a number of ways. Metrics can be accessed programmatically from the `MonitoringCenter`, they
-can be retrieved in JSON or Graphite-ready format via the `MonitoringCenterServlet`, or they can be pushed directly to
-a Graphite instance. For all the aforementioned reporting scenarios, the client is at liberty to define one or more
-filters to constrain the returned metrics. These filters support multiple wildcards expressed as `*`.
+can be retrieved in JSON or Graphite-ready format via the `MonitoringCenterServlet`, they can be pushed directly to
+a Graphite instance, or exposed via JMX. For all the aforementioned reporting scenarios, the client is at liberty to 
+define one or more filters to constrain the returned metrics. These filters support multiple wildcards expressed as `*`.
+Mainly for testing and troubleshooting purposes, metrics can also be output on demand to `System.out` or to an SLF4J 
+logger.
 
 When reporting metrics to Graphite--be it pull or push--the node-specific prefix will be appended to metric names. In all
 other cases, metrics names will not contain the node-specific prefix, unless explicitly requested. Please note that filters
