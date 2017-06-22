@@ -30,6 +30,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.sun.management.UnixOperatingSystemMXBean;
 import net.centro.rtb.monitoringcenter.util.MetricNamingUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,14 +55,26 @@ import java.util.concurrent.atomic.AtomicReference;
         isGetterVisibility = JsonAutoDetect.Visibility.NONE, setterVisibility = JsonAutoDetect.Visibility.NONE,
         creatorVisibility = JsonAutoDetect.Visibility.NONE)
 public class OperatingSystemMetricSet implements MetricSet, OperatingSystemStatus {
+    private static class NetworkInterfaceUsage {
+        private final long receivedBytesPerSecond;
+        private final long transmittedBytesPerSecond;
+
+        public NetworkInterfaceUsage(long receivedBytesPerSecond, long transmittedBytesPerSecond) {
+            this.receivedBytesPerSecond = receivedBytesPerSecond;
+            this.transmittedBytesPerSecond = transmittedBytesPerSecond;
+        }
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(OperatingSystemMetricSet.class);
 
     private OperatingSystemMXBean operatingSystemMXBean;
 
     private File rootFilePath;
 
-    private ScheduledExecutorService executorService;
+    private ScheduledExecutorService ioWaitUpdaterExecutorService;
+    private ScheduledExecutorService networkInterfaceUsageUpdaterExecutorService;
     private AtomicReference<Double> ioWaitPercentageHolder;
+    private AtomicReference<Map<String, NetworkInterfaceUsage>> networkInterfaceUsageByNetworkInterfaceNameHolder;
 
     private Gauge<Integer> availableLogicalProcessorsGauge;
     private Gauge<Double> systemLoadAverageGauge;
@@ -87,6 +100,8 @@ public class OperatingSystemMetricSet implements MetricSet, OperatingSystemStatu
 
     private Gauge<Double> ioWaitPercentageGauge;
 
+    private List<NetworkInterfaceStatus> networkInterfaceStatuses;
+
     private Map<String, Metric> metricsByNames;
 
     private AtomicBoolean shutdown;
@@ -100,8 +115,8 @@ public class OperatingSystemMetricSet implements MetricSet, OperatingSystemStatu
         if (ioWaitPercentage != null) {
             this.ioWaitPercentageHolder = new AtomicReference<>(ioWaitPercentage);
 
-            this.executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("OperatingSystemMetricSet-%d").build());
-            this.executorService.scheduleWithFixedDelay(new Runnable() {
+            this.ioWaitUpdaterExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("OperatingSystemMetricSet-IOWaitUpdater-%d").build());
+            this.ioWaitUpdaterExecutorService.scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
                     Double ioWaitPercentage = fetchIoWaitPercentage();
@@ -110,6 +125,23 @@ public class OperatingSystemMetricSet implements MetricSet, OperatingSystemStatu
                     }
                 }
             }, 5, 5, TimeUnit.SECONDS);
+        }
+
+        // Set up network interface usage retrieval job if needed
+        Map<String, NetworkInterfaceUsage> networkInterfaceUsageByNetworkInterfaceName = fetchNetworkInterfaceUsage();
+        if (networkInterfaceUsageByNetworkInterfaceName != null) {
+            this.networkInterfaceUsageByNetworkInterfaceNameHolder = new AtomicReference<>(networkInterfaceUsageByNetworkInterfaceName);
+
+            this.networkInterfaceUsageUpdaterExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("OperatingSystemMetricSet-NICUsageUpdater-%d").build());
+            this.networkInterfaceUsageUpdaterExecutorService.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    Map<String, NetworkInterfaceUsage> networkInterfaceUsageByNetworkInterfaceName = fetchNetworkInterfaceUsage();
+                    if (networkInterfaceUsageByNetworkInterfaceName != null) {
+                        networkInterfaceUsageByNetworkInterfaceNameHolder.set(networkInterfaceUsageByNetworkInterfaceName);
+                    }
+                }
+            }, 10, 10, TimeUnit.SECONDS);
         }
 
         // ----- Init and assign metrics -----
@@ -324,6 +356,62 @@ public class OperatingSystemMetricSet implements MetricSet, OperatingSystemStatu
             metricsByNames.put("ioWaitPercentage", ioWaitPercentageGauge);
         }
 
+        // Network interfaces
+        List<NetworkInterfaceStatus> networkInterfaceStatuses = new ArrayList<>();
+        if (networkInterfaceUsageByNetworkInterfaceName != null) {
+            for (final String name : networkInterfaceUsageByNetworkInterfaceName.keySet()) {
+                final String networkInterfaceNamespace = MetricNamingUtil.join("networkInterfaces", MetricNamingUtil.sanitize(name));
+
+                final Gauge<Long> receivedBytesPerSecondGauge = new Gauge<Long>() {
+                    @Override
+                    public Long getValue() {
+                        Map<String, NetworkInterfaceUsage> networkInterfaceUsageByNetworkInterfaceName = networkInterfaceUsageByNetworkInterfaceNameHolder.get();
+                        if (networkInterfaceUsageByNetworkInterfaceName != null) {
+                            NetworkInterfaceUsage networkInterfaceUsage = networkInterfaceUsageByNetworkInterfaceName.get(name);
+                            if (networkInterfaceUsage != null) {
+                                return networkInterfaceUsage.receivedBytesPerSecond;
+                            }
+                        }
+                        return 0L;
+                    }
+                };
+                metricsByNames.put(MetricNamingUtil.join(networkInterfaceNamespace, "receivedBytesPerSecond"), receivedBytesPerSecondGauge);
+
+                final Gauge<Long> transmittedBytesPerSecondGauge = new Gauge<Long>() {
+                    @Override
+                    public Long getValue() {
+                        Map<String, NetworkInterfaceUsage> networkInterfaceUsageByNetworkInterfaceName = networkInterfaceUsageByNetworkInterfaceNameHolder.get();
+                        if (networkInterfaceUsageByNetworkInterfaceName != null) {
+                            NetworkInterfaceUsage networkInterfaceUsage = networkInterfaceUsageByNetworkInterfaceName.get(name);
+                            if (networkInterfaceUsage != null) {
+                                return networkInterfaceUsage.transmittedBytesPerSecond;
+                            }
+                        }
+                        return 0L;
+                    }
+                };
+                metricsByNames.put(MetricNamingUtil.join(networkInterfaceNamespace, "transmittedBytesPerSecond"), transmittedBytesPerSecondGauge);
+
+                networkInterfaceStatuses.add(new NetworkInterfaceStatus() {
+                    @Override
+                    public String getName() {
+                        return name;
+                    }
+
+                    @Override
+                    public Gauge<Long> getReceivedBytesPerSecondGauge() {
+                        return receivedBytesPerSecondGauge;
+                    }
+
+                    @Override
+                    public Gauge<Long> getTransmittedBytesPerSecondGauge() {
+                        return transmittedBytesPerSecondGauge;
+                    }
+                });
+            }
+        }
+        this.networkInterfaceStatuses = networkInterfaceStatuses;
+
         this.shutdown = new AtomicBoolean(false);
     }
 
@@ -446,13 +534,23 @@ public class OperatingSystemMetricSet implements MetricSet, OperatingSystemStatu
         return ioWaitPercentageGauge;
     }
 
+    @JsonProperty
+    @Override
+    public List<NetworkInterfaceStatus> getNetworkInterfaceStatuses() {
+        return Collections.unmodifiableList(networkInterfaceStatuses);
+    }
+
     public void shutdown() {
         if (shutdown.getAndSet(true)) {
             return;
         }
 
-        if (executorService != null) {
-            MoreExecutors.shutdownAndAwaitTermination(executorService, 1, TimeUnit.SECONDS);
+        if (ioWaitUpdaterExecutorService != null) {
+            MoreExecutors.shutdownAndAwaitTermination(ioWaitUpdaterExecutorService, 1, TimeUnit.SECONDS);
+        }
+
+        if (networkInterfaceUsageUpdaterExecutorService != null) {
+            MoreExecutors.shutdownAndAwaitTermination(networkInterfaceUsageUpdaterExecutorService, 1, TimeUnit.SECONDS);
         }
     }
 
@@ -502,6 +600,89 @@ public class OperatingSystemMetricSet implements MetricSet, OperatingSystemStatu
             }
         } catch (Exception e) {
             logger.debug("Exception occurred while executing iostat command", e);
+
+            if (InterruptedException.class.isInstance(e)) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        return null;
+    }
+
+    private Map<String, NetworkInterfaceUsage> fetchNetworkInterfaceUsage() {
+        // Only Linux is supported
+        if (!SystemUtils.IS_OS_LINUX) {
+            return null;
+        }
+
+        try {
+            // Take the average of two readings from SAR
+            Process process = Runtime.getRuntime().exec(new String[] {"bash", "-c", "sar -n DEV 1 2 | awk 'BEGIN{OFS=\",\"}/^Average/ && $2 !~ /^IFACE/{print $2,$5,$6}'"});
+
+            BufferedReader errorStream = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            BufferedReader resultStream = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+            List<String> outputLines = new ArrayList<>();
+            String line = null;
+            while ((line = resultStream.readLine()) != null) {
+                outputLines.add(line);
+            }
+
+            boolean error = false;
+            while (errorStream.readLine() != null) {
+                error = true;
+            }
+
+            errorStream.close();
+            resultStream.close();
+
+            try {
+                int result = process.waitFor();
+                if (result != 0) {
+                    logger.debug("sar failed with return code {}", result);
+                }
+            } catch (InterruptedException e) {
+                logger.debug("sar was interrupted");
+            }
+
+            if (!error && outputLines.size() > 0) {
+                Map<String, NetworkInterfaceUsage> networkInterfaceUsageByNetworkInterfaceName = new HashMap<>();
+                for (String outputLine : outputLines) {
+                    String[] outputLineSplit = outputLine.split(",");
+                    if (outputLineSplit.length != 3) {
+                        logger.debug("Unexpected output line for network interface usage: {}", outputLine);
+                        continue;
+                    }
+                    String name = StringUtils.trimToNull(outputLineSplit[0]);
+                    if (name != null) {
+                        String receivedKilobytesPerSecondStr = outputLineSplit[1];
+                        double receivedKilobytesPerSecond = 0;
+                        try {
+                            receivedKilobytesPerSecond = Double.parseDouble(receivedKilobytesPerSecondStr.trim());
+                        } catch (NumberFormatException e) {
+                            logger.debug("Error parsing receivedKilobytesPerSecond from {}", receivedKilobytesPerSecondStr);
+                            continue;
+                        }
+
+                        String transmittedKilobytesPerSecondStr = outputLineSplit[2];
+                        double transmittedKilobytesPerSecond = 0;
+                        try {
+                            transmittedKilobytesPerSecond = Double.parseDouble(transmittedKilobytesPerSecondStr.trim());
+                        } catch (NumberFormatException e) {
+                            logger.debug("Error parsing transmittedKilobytesPerSecond from {}", transmittedKilobytesPerSecondStr);
+                            continue;
+                        }
+
+                        long receivedBytesPerSecond = (long) (receivedKilobytesPerSecond * 1024);
+                        long transmittedBytesPerSecond = (long) (transmittedKilobytesPerSecond * 1024);
+
+                        networkInterfaceUsageByNetworkInterfaceName.put(name, new NetworkInterfaceUsage(receivedBytesPerSecond, transmittedBytesPerSecond));
+                    }
+                }
+                return networkInterfaceUsageByNetworkInterfaceName.isEmpty() ? null : networkInterfaceUsageByNetworkInterfaceName;
+            }
+        } catch (Exception e) {
+            logger.debug("Exception occurred while executing sar command", e);
 
             if (InterruptedException.class.isInstance(e)) {
                 Thread.currentThread().interrupt();
