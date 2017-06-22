@@ -26,6 +26,7 @@ import com.sun.management.UnixOperatingSystemMXBean;
 
 import java.io.File;
 import java.lang.management.OperatingSystemMXBean;
+import java.util.List;
 
 /**
  * This interface holds the current readings for OS-level data points (such as CPU load, RAM usage, swap space usage,
@@ -161,7 +162,7 @@ public interface OperatingSystemStatus {
      * Retrieves the total disk space in bytes for the root path ("/").
      *
      * @see File#getTotalSpace()
-     * @return a gauge holding the total disk space in bytes for the root path; <tt>null</tt> if not available
+     * @return a gauge holding the total disk space in bytes for the root path; <tt>null</tt> if not available.
      */
     Gauge<Long> getTotalDiskSpaceInBytesGauge();
 
@@ -169,7 +170,7 @@ public interface OperatingSystemStatus {
      * Retrieves the free disk space in bytes for the root path ("/").
      *
      * @see File#getFreeSpace() ()
-     * @return a gauge holding the free disk space in bytes for the root path; <tt>null</tt> if not available
+     * @return a gauge holding the free disk space in bytes for the root path; <tt>null</tt> if not available.
      */
     Gauge<Long> getFreeDiskSpaceInBytesGauge();
 
@@ -188,4 +189,12 @@ public interface OperatingSystemStatus {
      * @return a gauge holding a recent UNIX iowait value; <tt>null</tt> if not available.
      */
     Gauge<Double> getIoWaitPercentageGauge();
+
+    /**
+     * Retrieves a list of network interface statuses. An empty list is returned if no network interface data is
+     * available.
+     *
+     * @return a list of network interface statuses.
+     */
+    List<NetworkInterfaceStatus> getNetworkInterfaceStatuses();
 }
