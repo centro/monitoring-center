@@ -22,12 +22,14 @@
 package net.centro.rtb.monitoringcenter;
 
 import com.codahale.metrics.*;
+import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import com.codahale.metrics.graphite.GraphiteSender;
 import com.codahale.metrics.graphite.PickledGraphite;
 import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
+import com.codahale.metrics.servlet.InstrumentedFilter;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -760,6 +762,11 @@ public class MonitoringCenter {
                 tomcatMetricSet = new TomcatMetricSet();
                 metricRegistry.register(TOMCAT_METRIC_NAMESPACE, tomcatMetricSet);
             }
+
+            if (metricCollectionConfig.isEnableWebAppMetrics()) {
+                Preconditions.checkNotNull(config.getServletContext(), "servlet context cannot be null when enabling web app metrics");
+                config.getServletContext().setAttribute(InstrumentedFilter.REGISTRY_ATTRIBUTE, metricRegistry);
+            }
         }
 
         // Configure reporters
@@ -891,6 +898,14 @@ public class MonitoringCenter {
                     }
                 }
             }
+
+            if (newMetricCollectionConfig.isEnableWebAppMetrics()) {
+                Preconditions.checkNotNull(currentConfig.getServletContext(), "servlet context cannot be null when enabling web app metrics");
+                currentConfig.getServletContext().setAttribute(InstrumentedFilter.REGISTRY_ATTRIBUTE, metricRegistry);
+            } else {
+                currentConfig.getServletContext().removeAttribute(InstrumentedFilter.REGISTRY_ATTRIBUTE);
+                //TODO not easy to remove the metrics populated in InstrumentedFilter
+            }
         }
 
         // Reload GraphiteReporter
@@ -1010,7 +1025,7 @@ public class MonitoringCenter {
                 if (startsWithFilters == null || startsWithFilters.isEmpty()) {
                     passedWhitelist = true;
                 } else {
-                    passedWhitelist = matchesStartsWithFilters(name, startsWithFilters.toArray(new String[] {}));
+                    passedWhitelist = matchesStartsWithFilters(name, startsWithFilters.toArray(new String[]{}));
                 }
 
                 if (!passedWhitelist) {
@@ -1020,7 +1035,7 @@ public class MonitoringCenter {
                 if (blockedStartsWithFilters == null || blockedStartsWithFilters.isEmpty()) {
                     return true;
                 } else {
-                    return !matchesStartsWithFilters(name, blockedStartsWithFilters.toArray(new String[] {}));
+                    return !matchesStartsWithFilters(name, blockedStartsWithFilters.toArray(new String[]{}));
                 }
             }
         };

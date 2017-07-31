@@ -24,6 +24,7 @@ package net.centro.rtb.monitoringcenter.config;
 import net.centro.rtb.monitoringcenter.util.MetricNamingUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.servlet.ServletContext;
 import java.io.File;
 
 /**
@@ -36,14 +37,16 @@ public class MonitoringCenterConfig {
     private NamingConfig namingConfig;
     private MetricCollectionConfig metricCollectionConfig;
     private MetricReportingConfig metricReportingConfig;
+    private ServletContext servletContext;
 
     private MonitoringCenterConfig(Builder builder) {
         this.configFile = builder.configFile;
 
         this.namingConfig = new NamingConfig(builder.applicationName, builder.datacenterName, builder.nodeGroupName,
                 builder.nodeId, builder.metricNamePostfixPolicy, builder.appendTypeToHealthCheckNames);
-        this.metricCollectionConfig = new MetricCollectionConfig(builder.enableSystemMetrics, builder.enableTomcatMetrics);
+        this.metricCollectionConfig = new MetricCollectionConfig(builder.enableSystemMetrics, builder.enableTomcatMetrics, builder.enableWebAppMetrics);
         this.metricReportingConfig = new MetricReportingConfig(builder.graphiteReporterConfig, builder.jmxReporterConfig);
+        this.servletContext = builder.servletContext;
     }
 
     /**
@@ -83,12 +86,23 @@ public class MonitoringCenterConfig {
         return metricReportingConfig;
     }
 
+    /**
+     * Retrieves the injected servlet context.
+     * The context could be null if client doesn't enable webApp metrics and it must be not null when webApp metrics enabled.
+     *
+     * @return servlet context
+     */
+    public ServletContext getServletContext() {
+        return servletContext;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("MonitoringCenterConfig{");
         sb.append("namingConfig=").append(namingConfig);
         sb.append(", metricCollectionConfig=").append(metricCollectionConfig);
         sb.append(", metricReportingConfig=").append(metricReportingConfig);
+        sb.append(", servletContext=").append(servletContext);
         sb.append('}');
         return sb.toString();
     }
@@ -115,8 +129,11 @@ public class MonitoringCenterConfig {
         private MetricNamePostfixPolicy metricNamePostfixPolicy;
         private Boolean appendTypeToHealthCheckNames;
 
+        private ServletContext servletContext;
+
         private boolean enableSystemMetrics;
         private boolean enableTomcatMetrics;
+        private boolean enableWebAppMetrics;
 
         private GraphiteReporterConfig graphiteReporterConfig;
         private JmxReporterConfig jmxReporterConfig;
@@ -135,6 +152,7 @@ public class MonitoringCenterConfig {
 
             this.enableSystemMetrics = false;
             this.enableTomcatMetrics = false;
+            this.enableWebAppMetrics = false;
         }
 
         /**
@@ -244,6 +262,20 @@ public class MonitoringCenterConfig {
         }
 
         /**
+         * The servlet context is configured by the application which wants to instrument the http filter.
+         * The context will not be utilized only when webApp metrics are enabled. Current implementation only supports
+         * {@Link com.codahale.metrics.servlet.InstrumentedFilter} and hence the web application itself should
+         * configure the filter in web.xml separately.
+         *
+         * @param servletContext the servlet context should be utilized for webApp metrics
+         * @return this builder
+         */
+        public Builder servletContext(ServletContext servletContext) {
+            this.servletContext = servletContext;
+            return this;
+        }
+
+        /**
          * Indicates whether the collection of system metrics should be enabled or not. System metrics include JVM- and
          * OS-level data points. By default, system metrics will not be collected.
          *
@@ -264,6 +296,11 @@ public class MonitoringCenterConfig {
          */
         public Builder enableTomcatMetrics(boolean enableTomcatMetrics) {
             this.enableTomcatMetrics = enableTomcatMetrics;
+            return this;
+        }
+
+        public Builder enableWebAppMetrics(boolean enableWebAppMetrics) {
+            this.enableWebAppMetrics = enableWebAppMetrics;
             return this;
         }
 
