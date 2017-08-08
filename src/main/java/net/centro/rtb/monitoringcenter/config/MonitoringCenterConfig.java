@@ -21,10 +21,10 @@
 
 package net.centro.rtb.monitoringcenter.config;
 
+import net.centro.rtb.monitoringcenter.metrics.web.InstrumentedWebAppFilter;
 import net.centro.rtb.monitoringcenter.util.MetricNamingUtil;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.servlet.ServletContext;
 import java.io.File;
 
 /**
@@ -37,7 +37,7 @@ public class MonitoringCenterConfig {
     private NamingConfig namingConfig;
     private MetricCollectionConfig metricCollectionConfig;
     private MetricReportingConfig metricReportingConfig;
-    private ServletContext servletContext;
+    private InstrumentedWebAppFilter instrumentedWebAppFilter;
 
     private MonitoringCenterConfig(Builder builder) {
         this.configFile = builder.configFile;
@@ -46,7 +46,7 @@ public class MonitoringCenterConfig {
                 builder.nodeId, builder.metricNamePostfixPolicy, builder.appendTypeToHealthCheckNames);
         this.metricCollectionConfig = new MetricCollectionConfig(builder.enableSystemMetrics, builder.enableTomcatMetrics, builder.enableWebAppMetrics);
         this.metricReportingConfig = new MetricReportingConfig(builder.graphiteReporterConfig, builder.jmxReporterConfig);
-        this.servletContext = builder.servletContext;
+        this.instrumentedWebAppFilter = builder.instrumentedWebAppFilter;
     }
 
     /**
@@ -90,10 +90,10 @@ public class MonitoringCenterConfig {
      * Retrieves the injected servlet context.
      * The context could be null if client doesn't enable webApp metrics and it must be not null when webApp metrics enabled.
      *
-     * @return servlet context
+     * @return instrumented web filter
      */
-    public ServletContext getServletContext() {
-        return servletContext;
+    public InstrumentedWebAppFilter getInstrumentedWebAppFilter() {
+        return instrumentedWebAppFilter;
     }
 
     @Override
@@ -102,7 +102,7 @@ public class MonitoringCenterConfig {
         sb.append("namingConfig=").append(namingConfig);
         sb.append(", metricCollectionConfig=").append(metricCollectionConfig);
         sb.append(", metricReportingConfig=").append(metricReportingConfig);
-        sb.append(", servletContext=").append(servletContext);
+        sb.append(", instrumentedWebAppFilter=").append(instrumentedWebAppFilter);
         sb.append('}');
         return sb.toString();
     }
@@ -129,7 +129,7 @@ public class MonitoringCenterConfig {
         private MetricNamePostfixPolicy metricNamePostfixPolicy;
         private Boolean appendTypeToHealthCheckNames;
 
-        private ServletContext servletContext;
+        private InstrumentedWebAppFilter instrumentedWebAppFilter;
 
         private boolean enableSystemMetrics;
         private boolean enableTomcatMetrics;
@@ -158,9 +158,9 @@ public class MonitoringCenterConfig {
         /**
          * Sets the application name to be used in the node-specific prefix for metrics. The application name will also
          * be employed in the {@link net.centro.rtb.monitoringcenter.infos.AppInfo}. For instance, "bidder".
-         *
+         * <p>
          * This is a required field.
-         *
+         * <p>
          * Note that the passed in value will be sanitized using {@link MetricNamingUtil#sanitize(String)}.
          *
          * @param applicationName application name.
@@ -182,7 +182,7 @@ public class MonitoringCenterConfig {
          * If not specified, the value will be retrieved from an environment variable, whose name is held in the
          * {@link #DC_ENV_VARIABLE_NAME} constant. In case the environment variable is not specified, {@link #NONE}
          * will be used as the value.
-         *
+         * <p>
          * Note that the passed in value will be sanitized using {@link MetricNamingUtil#sanitize(String)}.
          *
          * @param datacenterName data center name.
@@ -200,7 +200,7 @@ public class MonitoringCenterConfig {
          * If not specified, the value will be retrieved from an environment variable, whose name is held in the
          * {@link #NODE_GROUP_ENV_VARIABLE_NAME} constant. In case the environment variable is not specified,
          * {@link #NONE} will be used as the value.
-         *
+         * <p>
          * Note that the passed in value will be sanitized using {@link MetricNamingUtil#sanitize(String)}.
          *
          * @param nodeGroupName node group name.
@@ -218,7 +218,7 @@ public class MonitoringCenterConfig {
          * If not specified, the value will be retrieved from an environment variable, whose name is held in the
          * {@link #NODE_ID_ENV_VARIABLE_NAME} constant. In case the environment variable is not specified {@link #NONE}
          * will be used as the value.
-         *
+         * <p>
          * Note that the passed in value will be sanitized using {@link MetricNamingUtil#sanitize(String)}.
          *
          * @param nodeId ID of the node.
@@ -262,16 +262,11 @@ public class MonitoringCenterConfig {
         }
 
         /**
-         * The servlet context is configured by the application which wants to instrument the http filter.
-         * The context will not be utilized only when webApp metrics are enabled. Current implementation only supports
-         * {@Link com.codahale.metrics.servlet.InstrumentedFilter} and hence the web application itself should
-         * configure the filter in web.xml separately.
-         *
-         * @param servletContext the servlet context should be utilized for webApp metrics
+         * @param instrumentedWebAppFilter instrumented http filter should be utilized for webApp metrics
          * @return this builder
          */
-        public Builder servletContext(ServletContext servletContext) {
-            this.servletContext = servletContext;
+        public Builder instrumentedWebAppFilter(InstrumentedWebAppFilter instrumentedWebAppFilter) {
+            this.instrumentedWebAppFilter = instrumentedWebAppFilter;
             return this;
         }
 
