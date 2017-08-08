@@ -84,6 +84,7 @@ public class ConfigFileUtil {
             MetricCollectionConfigDto metricCollectionConfigDto = new MetricCollectionConfigDto();
             metricCollectionConfigDto.setEnableSystemMetrics(metricCollectionConfig.isEnableSystemMetrics());
             metricCollectionConfigDto.setEnableTomcatMetrics(metricCollectionConfig.isEnableTomcatMetrics());
+            metricCollectionConfigDto.setEnableWebAppMetrics(metricCollectionConfig.isEnableWebAppMetrics());
             configDto.setMetricCollectionConfig(metricCollectionConfigDto);
         }
 

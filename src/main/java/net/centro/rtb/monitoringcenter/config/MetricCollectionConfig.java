@@ -28,10 +28,12 @@ package net.centro.rtb.monitoringcenter.config;
 public class MetricCollectionConfig {
     private boolean enableSystemMetrics;
     private boolean enableTomcatMetrics;
+    private boolean enableWebAppMetrics;
 
-    MetricCollectionConfig(boolean enableSystemMetrics, boolean enableTomcatMetrics) {
+    MetricCollectionConfig(boolean enableSystemMetrics, boolean enableTomcatMetrics, boolean enableWebAppMetrics) {
         this.enableSystemMetrics = enableSystemMetrics;
         this.enableTomcatMetrics = enableTomcatMetrics;
+        this.enableWebAppMetrics = enableWebAppMetrics;
     }
 
     /**
@@ -55,6 +57,10 @@ public class MetricCollectionConfig {
         return enableTomcatMetrics;
     }
 
+    public boolean isEnableWebAppMetrics() {
+        return enableWebAppMetrics;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -63,6 +69,7 @@ public class MetricCollectionConfig {
         MetricCollectionConfig that = (MetricCollectionConfig) o;
 
         if (enableSystemMetrics != that.enableSystemMetrics) return false;
+        if (enableWebAppMetrics != that.enableWebAppMetrics) return false;
         return enableTomcatMetrics == that.enableTomcatMetrics;
     }
 
@@ -70,6 +77,7 @@ public class MetricCollectionConfig {
     public int hashCode() {
         int result = (enableSystemMetrics ? 1 : 0);
         result = 31 * result + (enableTomcatMetrics ? 1 : 0);
+        result = 31 * result + (enableWebAppMetrics ? 1 : 0);
         return result;
     }
 
@@ -78,6 +86,7 @@ public class MetricCollectionConfig {
         final StringBuilder sb = new StringBuilder("MetricCollectionConfig{");
         sb.append("enableSystemMetrics=").append(enableSystemMetrics);
         sb.append(", enableTomcatMetrics=").append(enableTomcatMetrics);
+        sb.append(", enableWebAppMetrics=").append(enableWebAppMetrics);
         sb.append('}');
         return sb.toString();
     }

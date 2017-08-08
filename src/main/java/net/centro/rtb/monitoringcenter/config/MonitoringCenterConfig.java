@@ -21,6 +21,7 @@
 
 package net.centro.rtb.monitoringcenter.config;
 
+import net.centro.rtb.monitoringcenter.metrics.web.InstrumentedWebAppFilter;
 import net.centro.rtb.monitoringcenter.util.MetricNamingUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -36,14 +37,16 @@ public class MonitoringCenterConfig {
     private NamingConfig namingConfig;
     private MetricCollectionConfig metricCollectionConfig;
     private MetricReportingConfig metricReportingConfig;
+    private InstrumentedWebAppFilter instrumentedWebAppFilter;
 
     private MonitoringCenterConfig(Builder builder) {
         this.configFile = builder.configFile;
 
         this.namingConfig = new NamingConfig(builder.applicationName, builder.datacenterName, builder.nodeGroupName,
                 builder.nodeId, builder.metricNamePostfixPolicy, builder.appendTypeToHealthCheckNames);
-        this.metricCollectionConfig = new MetricCollectionConfig(builder.enableSystemMetrics, builder.enableTomcatMetrics);
+        this.metricCollectionConfig = new MetricCollectionConfig(builder.enableSystemMetrics, builder.enableTomcatMetrics, builder.enableWebAppMetrics);
         this.metricReportingConfig = new MetricReportingConfig(builder.graphiteReporterConfig, builder.jmxReporterConfig);
+        this.instrumentedWebAppFilter = builder.instrumentedWebAppFilter;
     }
 
     /**
@@ -83,12 +86,23 @@ public class MonitoringCenterConfig {
         return metricReportingConfig;
     }
 
+    /**
+     * Retrieves the injected servlet context.
+     * The context could be null if client doesn't enable webApp metrics and it must be not null when webApp metrics enabled.
+     *
+     * @return instrumented web filter
+     */
+    public InstrumentedWebAppFilter getInstrumentedWebAppFilter() {
+        return instrumentedWebAppFilter;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("MonitoringCenterConfig{");
         sb.append("namingConfig=").append(namingConfig);
         sb.append(", metricCollectionConfig=").append(metricCollectionConfig);
         sb.append(", metricReportingConfig=").append(metricReportingConfig);
+        sb.append(", instrumentedWebAppFilter=").append(instrumentedWebAppFilter);
         sb.append('}');
         return sb.toString();
     }
@@ -115,8 +129,11 @@ public class MonitoringCenterConfig {
         private MetricNamePostfixPolicy metricNamePostfixPolicy;
         private Boolean appendTypeToHealthCheckNames;
 
+        private InstrumentedWebAppFilter instrumentedWebAppFilter;
+
         private boolean enableSystemMetrics;
         private boolean enableTomcatMetrics;
+        private boolean enableWebAppMetrics;
 
         private GraphiteReporterConfig graphiteReporterConfig;
         private JmxReporterConfig jmxReporterConfig;
@@ -135,14 +152,15 @@ public class MonitoringCenterConfig {
 
             this.enableSystemMetrics = false;
             this.enableTomcatMetrics = false;
+            this.enableWebAppMetrics = false;
         }
 
         /**
          * Sets the application name to be used in the node-specific prefix for metrics. The application name will also
          * be employed in the {@link net.centro.rtb.monitoringcenter.infos.AppInfo}. For instance, "bidder".
-         *
+         * <p>
          * This is a required field.
-         *
+         * <p>
          * Note that the passed in value will be sanitized using {@link MetricNamingUtil#sanitize(String)}.
          *
          * @param applicationName application name.
@@ -164,7 +182,7 @@ public class MonitoringCenterConfig {
          * If not specified, the value will be retrieved from an environment variable, whose name is held in the
          * {@link #DC_ENV_VARIABLE_NAME} constant. In case the environment variable is not specified, {@link #NONE}
          * will be used as the value.
-         *
+         * <p>
          * Note that the passed in value will be sanitized using {@link MetricNamingUtil#sanitize(String)}.
          *
          * @param datacenterName data center name.
@@ -182,7 +200,7 @@ public class MonitoringCenterConfig {
          * If not specified, the value will be retrieved from an environment variable, whose name is held in the
          * {@link #NODE_GROUP_ENV_VARIABLE_NAME} constant. In case the environment variable is not specified,
          * {@link #NONE} will be used as the value.
-         *
+         * <p>
          * Note that the passed in value will be sanitized using {@link MetricNamingUtil#sanitize(String)}.
          *
          * @param nodeGroupName node group name.
@@ -200,7 +218,7 @@ public class MonitoringCenterConfig {
          * If not specified, the value will be retrieved from an environment variable, whose name is held in the
          * {@link #NODE_ID_ENV_VARIABLE_NAME} constant. In case the environment variable is not specified {@link #NONE}
          * will be used as the value.
-         *
+         * <p>
          * Note that the passed in value will be sanitized using {@link MetricNamingUtil#sanitize(String)}.
          *
          * @param nodeId ID of the node.
@@ -244,6 +262,15 @@ public class MonitoringCenterConfig {
         }
 
         /**
+         * @param instrumentedWebAppFilter instrumented http filter should be utilized for webApp metrics
+         * @return this builder
+         */
+        public Builder instrumentedWebAppFilter(InstrumentedWebAppFilter instrumentedWebAppFilter) {
+            this.instrumentedWebAppFilter = instrumentedWebAppFilter;
+            return this;
+        }
+
+        /**
          * Indicates whether the collection of system metrics should be enabled or not. System metrics include JVM- and
          * OS-level data points. By default, system metrics will not be collected.
          *
@@ -264,6 +291,11 @@ public class MonitoringCenterConfig {
          */
         public Builder enableTomcatMetrics(boolean enableTomcatMetrics) {
             this.enableTomcatMetrics = enableTomcatMetrics;
+            return this;
+        }
+
+        public Builder enableWebAppMetrics(boolean enableWebAppMetrics) {
+            this.enableWebAppMetrics = enableWebAppMetrics;
             return this;
         }
 

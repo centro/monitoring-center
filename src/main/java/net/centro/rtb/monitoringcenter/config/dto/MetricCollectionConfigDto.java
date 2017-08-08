@@ -27,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class MetricCollectionConfigDto {
     private Boolean enableSystemMetrics;
     private Boolean enableTomcatMetrics;
+    private Boolean enableWebAppMetrics;
 
     public Boolean getEnableSystemMetrics() {
         return enableSystemMetrics;
@@ -42,5 +43,13 @@ public class MetricCollectionConfigDto {
 
     public void setEnableTomcatMetrics(Boolean enableTomcatMetrics) {
         this.enableTomcatMetrics = enableTomcatMetrics;
+    }
+
+    public Boolean getEnableWebAppMetrics() {
+        return enableWebAppMetrics;
+    }
+
+    public void setEnableWebAppMetrics(Boolean enableWebAppMetrics) {
+        this.enableWebAppMetrics = enableWebAppMetrics;
     }
 }

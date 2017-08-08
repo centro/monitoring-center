@@ -22,6 +22,7 @@
 package net.centro.rtb.monitoringcenter;
 
 import com.codahale.metrics.*;
+import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import com.codahale.metrics.graphite.GraphiteSender;
@@ -36,13 +37,7 @@ import com.google.common.cache.RemovalNotification;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import net.centro.rtb.monitoringcenter.config.Configurator;
-import net.centro.rtb.monitoringcenter.config.GraphiteReporterConfig;
-import net.centro.rtb.monitoringcenter.config.HostAndPort;
-import net.centro.rtb.monitoringcenter.config.JmxReporterConfig;
-import net.centro.rtb.monitoringcenter.config.MetricCollectionConfig;
-import net.centro.rtb.monitoringcenter.config.MonitoringCenterConfig;
-import net.centro.rtb.monitoringcenter.config.NamingConfig;
+import net.centro.rtb.monitoringcenter.config.*;
 import net.centro.rtb.monitoringcenter.infos.AppInfo;
 import net.centro.rtb.monitoringcenter.infos.NodeInfo;
 import net.centro.rtb.monitoringcenter.infos.SystemInfo;
@@ -50,6 +45,7 @@ import net.centro.rtb.monitoringcenter.metrics.system.SystemMetricSet;
 import net.centro.rtb.monitoringcenter.metrics.system.SystemStatus;
 import net.centro.rtb.monitoringcenter.metrics.tomcat.TomcatMetricSet;
 import net.centro.rtb.monitoringcenter.metrics.tomcat.TomcatStatus;
+import net.centro.rtb.monitoringcenter.metrics.web.InstrumentedWebAppFilter;
 import net.centro.rtb.monitoringcenter.util.ConfigFileUtil;
 import net.centro.rtb.monitoringcenter.util.MetricNamingUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -58,18 +54,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -83,20 +69,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <li>providing static information about the system (OS and JVM), network node, and application</li>
  * <li>and, finally, exposing system (OS and JVM) and Tomcat statuses.</li>
  * </ul>
- *
+ * <p>
  * <p>MonitoringCenter is a wrapper around Dropwizard's {@link MetricRegistry} and {@link HealthCheckRegistry}.</p>
- *
  * <p>
- *     This class must be configured before any application code using it is executed. Thus, it is recommended to run
- *     {@link #configure(MonitoringCenterConfig)} as the first statement in the ContextListener or the main() method
- *     (perhaps, right after configuring your logging framework). Please note that MonitoringCenter will configure
- *     itself automatically upon calls to {@link #getMetricCollector(String, String...)} or
- *     {@link #registerHealthCheck(String, HealthCheck)}. When configured automatically, the MonitoringCenter will
- *     use the default config file as explained in {@link Configurator#defaultConfigFile()}.
+ * <p>
+ * This class must be configured before any application code using it is executed. Thus, it is recommended to run
+ * {@link #configure(MonitoringCenterConfig)} as the first statement in the ContextListener or the main() method
+ * (perhaps, right after configuring your logging framework). Please note that MonitoringCenter will configure
+ * itself automatically upon calls to {@link #getMetricCollector(String, String...)} or
+ * {@link #registerHealthCheck(String, HealthCheck)}. When configured automatically, the MonitoringCenter will
+ * use the default config file as explained in {@link Configurator#defaultConfigFile()}.
  * </p>
- *
  * <p>
- *     This class is thread-safe.
+ * <p>
+ * This class is thread-safe.
  * </p>
  */
 public class MonitoringCenter {
@@ -138,6 +124,7 @@ public class MonitoringCenter {
 
     private static SystemMetricSet systemMetricSet;
     private static TomcatMetricSet tomcatMetricSet;
+    private static InstrumentedWebAppFilter instrumentedWebAppFilter;
 
     private static SystemInfo systemInfo;
     private static NodeInfo nodeInfo;
@@ -166,7 +153,7 @@ public class MonitoringCenter {
      * This method triggers the MonitoringCenter auto-configuration, if the {@link #configure(MonitoringCenterConfig)}
      * has not been called explicitly.
      *
-     * @param clazz class, whose simple name will serve as the main namespace for the metric collector.
+     * @param clazz      class, whose simple name will serve as the main namespace for the metric collector.
      * @param namespaces supplementary namespaces to use for the metric collector.
      * @return a new or cached metric collector with the provided namespace.
      * @throws NullPointerException if <tt>clazz</tt> is <tt>null</tt>.
@@ -187,7 +174,7 @@ public class MonitoringCenter {
      * This method triggers the MonitoringCenter auto-configuration, if the {@link #configure(MonitoringCenterConfig)}
      * has not been called explicitly.
      *
-     * @param mainNamespace main namespace.
+     * @param mainNamespace        main namespace.
      * @param additionalNamespaces supplementary namespaces to use for the metric collector.
      * @return a new or cached metric collector with the provided namespace.
      * @throws IllegalArgumentException if <tt>mainNamespace</tt> is blank.
@@ -212,7 +199,7 @@ public class MonitoringCenter {
     /**
      * Retrieves a MetricCollector, whose main namespace is "dbs". This method is a convenience method for ensuring
      * consistent naming for database-related metrics.
-     *
+     * <p>
      * <br><br>
      * The additional namespaces will be sanitized as described in {@link MetricNamingUtil#join(String, String...)}.
      * <br><br>
@@ -257,7 +244,7 @@ public class MonitoringCenter {
      * <br><br>
      * If <tt>appendPrefix</tt> is <tt>true</tt>, the node-specific prefix will be appended to all metric names.
      *
-     * @param appendPrefix whether to append the node-specific prefix to names of metrics or not.
+     * @param appendPrefix      whether to append the node-specific prefix to names of metrics or not.
      * @param startsWithFilters an array of filters to apply to names of metrics.
      * @return a sorted map of counters by names or an empty map if no counters matching the constraints are found.
      */
@@ -296,7 +283,7 @@ public class MonitoringCenter {
      * <br><br>
      * If <tt>appendPrefix</tt> is <tt>true</tt>, the node-specific prefix will be appended to all metric names.
      *
-     * @param appendPrefix whether to append the node-specific prefix to names of metrics or not.
+     * @param appendPrefix      whether to append the node-specific prefix to names of metrics or not.
      * @param startsWithFilters an array of filters to apply to names of metrics.
      * @return a sorted map of meters by names or an empty map if no meters matching the constraints are found.
      */
@@ -335,7 +322,7 @@ public class MonitoringCenter {
      * <br><br>
      * If <tt>appendPrefix</tt> is <tt>true</tt>, the node-specific prefix will be appended to all metric names.
      *
-     * @param appendPrefix whether to append the node-specific prefix to names of metrics or not.
+     * @param appendPrefix      whether to append the node-specific prefix to names of metrics or not.
      * @param startsWithFilters an array of filters to apply to names of metrics.
      * @return a sorted map of histograms by names or an empty map if no histograms matching the constraints are found.
      */
@@ -374,7 +361,7 @@ public class MonitoringCenter {
      * <br><br>
      * If <tt>appendPrefix</tt> is <tt>true</tt>, the node-specific prefix will be appended to all metric names.
      *
-     * @param appendPrefix whether to append the node-specific prefix to names of metrics or not.
+     * @param appendPrefix      whether to append the node-specific prefix to names of metrics or not.
      * @param startsWithFilters an array of filters to apply to names of metrics.
      * @return a sorted map of timers by names or an empty map if no timers matching the constraints are found.
      */
@@ -413,7 +400,7 @@ public class MonitoringCenter {
      * <br><br>
      * If <tt>appendPrefix</tt> is <tt>true</tt>, the node-specific prefix will be appended to all metric names.
      *
-     * @param appendPrefix whether to append the node-specific prefix to names of metrics or not.
+     * @param appendPrefix      whether to append the node-specific prefix to names of metrics or not.
      * @param startsWithFilters an array of filters to apply to names of metrics.
      * @return a sorted map of gauges by names or an empty map if no gauges matching the constraints are found.
      */
@@ -452,7 +439,7 @@ public class MonitoringCenter {
      * <br><br>
      * If <tt>appendPrefix</tt> is <tt>true</tt>, the node-specific prefix will be appended to all metric names.
      *
-     * @param appendPrefix whether to append the node-specific prefix to names of metrics or not.
+     * @param appendPrefix      whether to append the node-specific prefix to names of metrics or not.
      * @param startsWithFilters an array of filters to apply to names of metrics.
      * @return a sorted map of metrics by names or an empty map if no metrics matching the constraints are found.
      */
@@ -496,7 +483,7 @@ public class MonitoringCenter {
 
         Slf4jReporter slf4jReporter = null;
         try {
-             slf4jReporter = slf4jReportersByLoggerNames.get(logger.getName(), new Callable<Slf4jReporter>() {
+            slf4jReporter = slf4jReportersByLoggerNames.get(logger.getName(), new Callable<Slf4jReporter>() {
                 @Override
                 public Slf4jReporter call() throws Exception {
                     return Slf4jReporter.forRegistry(metricRegistry)
@@ -524,9 +511,9 @@ public class MonitoringCenter {
      * This method triggers the MonitoringCenter auto-configuration, if the {@link #configure(MonitoringCenterConfig)}
      * has not been called explicitly.
      *
-     * @param name name of the health check to register.
+     * @param name        name of the health check to register.
      * @param healthCheck a health check to register.
-     * @throws NullPointerException if <tt>healthCheck</tt> is <tt>null</tt>.
+     * @throws NullPointerException     if <tt>healthCheck</tt> is <tt>null</tt>.
      * @throws IllegalArgumentException if <tt>name</tt> is blank.
      */
     public static void registerHealthCheck(String name, HealthCheck healthCheck) {
@@ -565,7 +552,7 @@ public class MonitoringCenter {
      * @param name name of the health check to execute.
      * @return result of the executed health check.
      * @throws IllegalArgumentException if <tt>name</tt> is blank.
-     * @throws NoSuchElementException if MonitoringCenter has not been configured or if health check could not be found.
+     * @throws NoSuchElementException   if MonitoringCenter has not been configured or if health check could not be found.
      */
     public static HealthCheck.Result runHealthCheck(String name) {
         if (!configured.get()) {
@@ -760,6 +747,12 @@ public class MonitoringCenter {
                 tomcatMetricSet = new TomcatMetricSet();
                 metricRegistry.register(TOMCAT_METRIC_NAMESPACE, tomcatMetricSet);
             }
+
+            if (metricCollectionConfig.isEnableWebAppMetrics()) {
+                Preconditions.checkNotNull(config.getInstrumentedWebAppFilter(), "instrumented filter is missing when enabling web app metrics");
+                instrumentedWebAppFilter = config.getInstrumentedWebAppFilter();
+                instrumentedWebAppFilter.setMetricsRegistry(metricRegistry);
+            }
         }
 
         // Configure reporters
@@ -891,6 +884,14 @@ public class MonitoringCenter {
                     }
                 }
             }
+
+            if (newMetricCollectionConfig.isEnableWebAppMetrics()) {
+                Preconditions.checkNotNull(currentConfig.getInstrumentedWebAppFilter(), "instrumented filter is missing when enabling web app metrics");
+                instrumentedWebAppFilter = currentConfig.getInstrumentedWebAppFilter();
+                instrumentedWebAppFilter.setMetricsRegistry(metricRegistry);
+            } else {
+                instrumentedWebAppFilter.removeMetrics();
+            }
         }
 
         // Reload GraphiteReporter
@@ -1010,7 +1011,7 @@ public class MonitoringCenter {
                 if (startsWithFilters == null || startsWithFilters.isEmpty()) {
                     passedWhitelist = true;
                 } else {
-                    passedWhitelist = matchesStartsWithFilters(name, startsWithFilters.toArray(new String[] {}));
+                    passedWhitelist = matchesStartsWithFilters(name, startsWithFilters.toArray(new String[]{}));
                 }
 
                 if (!passedWhitelist) {
@@ -1020,7 +1021,7 @@ public class MonitoringCenter {
                 if (blockedStartsWithFilters == null || blockedStartsWithFilters.isEmpty()) {
                     return true;
                 } else {
-                    return !matchesStartsWithFilters(name, blockedStartsWithFilters.toArray(new String[] {}));
+                    return !matchesStartsWithFilters(name, blockedStartsWithFilters.toArray(new String[]{}));
                 }
             }
         };
