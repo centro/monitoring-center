@@ -23,23 +23,18 @@ package net.centro.rtb.monitoringcenter.infos;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
+import net.centro.rtb.monitoringcenter.MonitoringCenter;
 import net.centro.rtb.monitoringcenter.config.NamingConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.centro.rtb.monitoringcenter.util.NodeInfoUtil;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Collections;
-import java.util.Enumeration;
 
 /**
  * This class holds the information about a network node. In this context, the definition of a node is somewhat loose
  * and generally means any physical or virtual server running one or more applications.
  *
  * <p>Node ID, data center name, and node group name are all as configured in the
- * {@link net.centro.rtb.monitoringcenter.MonitoringCenter}.
+ * {@link MonitoringCenter}.
  * </p>
  *
  * <p>The IP addresses in are auto-detected on a best effort basis via introspecting the available instances of
@@ -48,14 +43,11 @@ import java.util.Enumeration;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class NodeInfo {
-    private static final Logger logger = LoggerFactory.getLogger(NodeInfo.class);
-
     private String nodeId;
     private String datacenterName;
     private String nodeGroupName;
 
     private String publicIpAddress;
-    private String loadBalancerIpAddress;
 
     private NodeInfo() {
     }
@@ -72,8 +64,7 @@ public class NodeInfo {
         nodeInfo.nodeGroupName = nodeGroupName;
         nodeInfo.nodeId = nodeId;
 
-        nodeInfo.publicIpAddress = detectPublicIpAddress();
-        nodeInfo.loadBalancerIpAddress = detectLoadBalancerIpAddress();
+        nodeInfo.publicIpAddress = NodeInfoUtil.detectPublicIpAddress();
 
         return nodeInfo;
     }
@@ -117,80 +108,5 @@ public class NodeInfo {
      */
     public String getPublicIpAddress() {
         return publicIpAddress;
-    }
-
-    /**
-     * Retrieves the IP address of the load balancer, if applicable.
-     *
-     * @return the IP address of the load balancer; <tt>null</tt> if not applicable or could not be detected.
-     */
-    public String getLoadBalancerIpAddress() {
-        return loadBalancerIpAddress;
-    }
-
-    private static String detectPublicIpAddress() {
-        Enumeration<NetworkInterface> networkInterfaces = null;
-        try {
-            networkInterfaces = NetworkInterface.getNetworkInterfaces();
-        } catch (SocketException e) {
-            logger.debug("Unable to obtain network interfaces!", e);
-            return null;
-        }
-
-        for (NetworkInterface networkInterface : Collections.list(networkInterfaces)) {
-            boolean isLoopback = false;
-            try {
-                isLoopback = networkInterface.isLoopback();
-            } catch (SocketException e) {
-                logger.debug("Unable to identify if a network interface is a loopback or not");
-            }
-
-            if (!isLoopback) {
-                Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
-                while (inetAddresses.hasMoreElements()) {
-                    InetAddress inetAddress = inetAddresses.nextElement();
-                    if (Inet4Address.class.isInstance(inetAddress)) {
-                        if (!inetAddress.isLoopbackAddress() && !inetAddress.isAnyLocalAddress() &&
-                                !inetAddress.isLinkLocalAddress() && !inetAddress.isSiteLocalAddress()) {
-                            return inetAddress.getHostAddress();
-                        }
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private static String detectLoadBalancerIpAddress() {
-        Enumeration<NetworkInterface> networkInterfaces = null;
-        try {
-            networkInterfaces = NetworkInterface.getNetworkInterfaces();
-        } catch (SocketException e) {
-            logger.debug("Unable to obtain network interfaces!", e);
-            return null;
-        }
-
-        for (NetworkInterface networkInterface : Collections.list(networkInterfaces)) {
-            boolean isLoopback = false;
-            try {
-                isLoopback = networkInterface.isLoopback();
-            } catch (SocketException e) {
-                logger.debug("Unable to identify if a network interface is a loopback or not");
-                continue;
-            }
-
-            if (isLoopback) {
-                Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
-                while (inetAddresses.hasMoreElements()) {
-                    InetAddress inetAddress = inetAddresses.nextElement();
-                    if (!inetAddress.isLoopbackAddress() && Inet4Address.class.isInstance(inetAddress)) {
-                        return inetAddress.getHostAddress();
-                    }
-                }
-            }
-        }
-
-        return null;
     }
 }
