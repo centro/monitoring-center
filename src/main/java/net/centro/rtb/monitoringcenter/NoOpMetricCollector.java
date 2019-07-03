@@ -27,6 +27,7 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.Timer;
 import com.google.common.cache.Cache;
@@ -51,6 +52,11 @@ class NoOpMetricCollector implements MetricCollector {
     @Override
     public Timer getTimer(String topLevelName, String... additionalNames) {
         return new Timer();
+    }
+
+    @Override
+    public Timer getTimer(MetricRegistry.MetricSupplier<Timer> metricSupplier, String topLevelName, String... additionalNames) {
+        return metricSupplier.newMetric();
     }
 
     @Override

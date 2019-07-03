@@ -92,6 +92,11 @@ class MetricCollectorImpl implements MetricCollector {
     }
 
     @Override
+    public Timer getTimer(MetricRegistry.MetricSupplier<Timer> metricSupplier, String topLevelName, String... additionalNames) {
+        return metricRegistry.timer(buildFullName(topLevelName, additionalNames, TIMER_POSTFIX), metricSupplier);
+    }
+
+    @Override
     public Meter getMeter(String topLevelName, String... additionalNames) {
         return metricRegistry.meter(buildFullName(topLevelName, additionalNames, METER_POSTFIX));
     }
