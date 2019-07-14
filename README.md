@@ -34,7 +34,7 @@ Generally speaking, noticeable overhead is only incurred on calling the reportin
 `MonitoringCenterServlet`, or via Graphite reporter.
 
 ##### Compatibility
-Java 7+
+Java 8+
 
 ##### Dependencies
 * [Dropwizard's Metrics](https://dropwizard.github.io/metrics) - engine of the MonitoringCenter.
