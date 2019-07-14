@@ -56,10 +56,10 @@
 
         <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
 
-        <javac.src.version>1.7</javac.src.version>
-        <javac.target.version>1.7</javac.target.version>
+        <javac.src.version>1.8</javac.src.version>
+        <javac.target.version>1.8</javac.target.version>
 
-        <jackson.version>2.7.8</jackson.version>
+        <jackson.version>2.9.0</jackson.version>
         <metrics.version>3.2.2</metrics.version>
     </properties>
 
