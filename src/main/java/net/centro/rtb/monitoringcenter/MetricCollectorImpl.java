@@ -53,6 +53,7 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 
 class MetricCollectorImpl implements MetricCollector {
     private static final String COUNTER_POSTFIX = "Counter";
@@ -87,8 +88,20 @@ class MetricCollectorImpl implements MetricCollector {
     }
 
     @Override
+    public Counter getCounter(Supplier<Counter> counterSupplier, String topLevelName, String... additionalNames) {
+        Preconditions.checkNotNull(counterSupplier, "counterSupplier cannot be null");
+        return metricRegistry.counter(buildFullName(topLevelName, additionalNames, COUNTER_POSTFIX), counterSupplier::get);
+    }
+
+    @Override
     public Timer getTimer(String topLevelName, String... additionalNames) {
         return metricRegistry.timer(buildFullName(topLevelName, additionalNames, TIMER_POSTFIX));
+    }
+
+    @Override
+    public Timer getTimer(Supplier<Timer> timerSupplier, String topLevelName, String... additionalNames) {
+        Preconditions.checkNotNull(timerSupplier, "timerSupplier cannot be null");
+        return metricRegistry.timer(buildFullName(topLevelName, additionalNames, TIMER_POSTFIX), timerSupplier::get);
     }
 
     @Override
@@ -97,8 +110,27 @@ class MetricCollectorImpl implements MetricCollector {
     }
 
     @Override
+    public Meter getMeter(Supplier<Meter> meterSupplier, String topLevelName, String... additionalNames) {
+        Preconditions.checkNotNull(meterSupplier, "meterSupplier cannot be null");
+        return metricRegistry.meter(buildFullName(topLevelName, additionalNames, METER_POSTFIX), meterSupplier::get);
+    }
+
+    @Override
     public Histogram getHistogram(String topLevelName, String... additionalNames) {
         return metricRegistry.histogram(buildFullName(topLevelName, additionalNames, HISTOGRAM_POSTFIX));
+    }
+
+    @Override
+    public Histogram getHistogram(Supplier<Histogram> histogramSupplier, String topLevelName, String... additionalNames) {
+        Preconditions.checkNotNull(histogramSupplier, "histogramSupplier cannot be null");
+        return metricRegistry.histogram(buildFullName(topLevelName, additionalNames, HISTOGRAM_POSTFIX), histogramSupplier::get);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> Gauge<T> getGauge(Supplier<Gauge<T>> gaugeSupplier, String topLevelName, String... additionalNames) {
+        Preconditions.checkNotNull(gaugeSupplier, "gaugeSupplier cannot be null");
+        return metricRegistry.gauge(buildFullName(topLevelName, additionalNames, GAUGE_POSTFIX), gaugeSupplier::get);
     }
 
     @Override

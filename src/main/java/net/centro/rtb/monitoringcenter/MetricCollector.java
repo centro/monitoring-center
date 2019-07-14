@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 
 /**
  * This interface is responsible for providing clients of the {@link MonitoringCenter} with methods for collecting
@@ -100,6 +101,24 @@ public interface MetricCollector {
     Counter getCounter(String topLevelName, String... additionalNames);
 
     /**
+     * Retrieves a counter, creating it if one does not exist. This method is thread-safe. The actual name of the
+     * counter registered with the MonitoringCenter will be prefixed with MetricCollector's namespace and, possibly,
+     * postfixed with the type of the metric (i.e., Counter). The postfix enforcement is controlled by the
+     * {@link net.centro.rtb.monitoringcenter.config.MetricNamePostfixPolicy} configured in the MonitoringCenter.
+     * <br>
+     * All illegal characters contained in the provided name parts will be escaped as documented for
+     * {@link net.centro.rtb.monitoringcenter.util.MetricNamingUtil#join(String, String...)}.
+     *
+     * @param counterSupplier supplier for the counter.
+     * @param topLevelName top-level part of the counter's name.
+     * @param additionalNames additional parts of the counter's name.
+     * @return a new or existing counter.
+     * @throws NullPointerException if supplier is <tt>null</tt>.
+     * @throws IllegalArgumentException if top-level part of the name is blank.
+     */
+    Counter getCounter(Supplier<Counter> counterSupplier, String topLevelName, String... additionalNames);
+
+    /**
      * Retrieves a timer, creating it if one does not exist. This method is thread-safe. The actual name of the
      * timer registered with the MonitoringCenter will be prefixed with MetricCollector's namespace and, possibly,
      * postfixed with the type of the metric (i.e., Timer). The postfix enforcement is controlled by the
@@ -114,6 +133,24 @@ public interface MetricCollector {
      * @throws IllegalArgumentException if top-level part of the name is blank.
      */
     Timer getTimer(String topLevelName, String... additionalNames);
+
+    /**
+     * Retrieves a timer, creating it if one does not exist. This method is thread-safe. The actual name of the
+     * timer registered with the MonitoringCenter will be prefixed with MetricCollector's namespace and, possibly,
+     * postfixed with the type of the metric (i.e., Timer). The postfix enforcement is controlled by the
+     * {@link net.centro.rtb.monitoringcenter.config.MetricNamePostfixPolicy} configured in the MonitoringCenter.
+     * <br>
+     * All illegal characters contained in the provided name parts will be escaped as documented for
+     * {@link net.centro.rtb.monitoringcenter.util.MetricNamingUtil#join(String, String...)}.
+     *
+     * @param timerSupplier supplier for the timer.
+     * @param topLevelName top-level part of the timer's name.
+     * @param additionalNames additional parts of the timer's name.
+     * @return a new or existing timer.
+     * @throws NullPointerException if supplier is <tt>null</tt>.
+     * @throws IllegalArgumentException if top-level part of the name is blank.
+     */
+    Timer getTimer(Supplier<Timer> timerSupplier, String topLevelName, String... additionalNames);
 
     /**
      * Retrieves a meter, creating it if one does not exist. This method is thread-safe. The actual name of the
@@ -132,6 +169,24 @@ public interface MetricCollector {
     Meter getMeter(String topLevelName, String... additionalNames);
 
     /**
+     * Retrieves a meter, creating it if one does not exist. This method is thread-safe. The actual name of the
+     * meter registered with the MonitoringCenter will be prefixed with MetricCollector's namespace and, possibly,
+     * postfixed with the type of the metric (i.e., Meter). The postfix enforcement is controlled by the
+     * {@link net.centro.rtb.monitoringcenter.config.MetricNamePostfixPolicy} configured in the MonitoringCenter.
+     * <br>
+     * All illegal characters contained in the provided name parts will be escaped as documented for
+     * {@link net.centro.rtb.monitoringcenter.util.MetricNamingUtil#join(String, String...)}.
+     *
+     * @param meterSupplier supplier for the meter.
+     * @param topLevelName top-level part of the meter's name.
+     * @param additionalNames additional parts of the meter's name.
+     * @return a new or existing meter.
+     * @throws NullPointerException if supplier is <tt>null</tt>.
+     * @throws IllegalArgumentException if top-level part of the name is blank.
+     */
+    Meter getMeter(Supplier<Meter> meterSupplier, String topLevelName, String... additionalNames);
+
+    /**
      * Retrieves a histogram, creating it if one does not exist. This method is thread-safe. The actual name of the
      * histogram registered with the MonitoringCenter will be prefixed with MetricCollector's namespace and, possibly,
      * postfixed with the type of the metric (i.e., Histogram). The postfix enforcement is controlled by the
@@ -146,6 +201,42 @@ public interface MetricCollector {
      * @throws IllegalArgumentException if top-level part of the name is blank.
      */
     Histogram getHistogram(String topLevelName, String... additionalNames);
+
+    /**
+     * Retrieves a histogram, creating it if one does not exist. This method is thread-safe. The actual name of the
+     * histogram registered with the MonitoringCenter will be prefixed with MetricCollector's namespace and, possibly,
+     * postfixed with the type of the metric (i.e., Histogram). The postfix enforcement is controlled by the
+     * {@link net.centro.rtb.monitoringcenter.config.MetricNamePostfixPolicy} configured in the MonitoringCenter.
+     * <br>
+     * All illegal characters contained in the provided name parts will be escaped as documented for
+     * {@link net.centro.rtb.monitoringcenter.util.MetricNamingUtil#join(String, String...)}.
+     *
+     * @param histogramSupplier supplier for the histogram.
+     * @param topLevelName top-level part of the histogram's name.
+     * @param additionalNames additional parts of the histogram's name.
+     * @return a new or existing histogram.
+     * @throws NullPointerException if supplier is <tt>null</tt>.
+     * @throws IllegalArgumentException if top-level part of the name is blank.
+     */
+    Histogram getHistogram(Supplier<Histogram> histogramSupplier, String topLevelName, String... additionalNames);
+
+    /**
+     * Retrieves a gauge, creating it if one does not exist. This method is thread-safe. The actual name of the
+     * gauge registered with the MonitoringCenter will be prefixed with MetricCollector's namespace and, possibly,
+     * postfixed with the type of the metric (i.e., Gauge). The postfix enforcement is controlled by the
+     * {@link net.centro.rtb.monitoringcenter.config.MetricNamePostfixPolicy} configured in the MonitoringCenter.
+     * <br>
+     * All illegal characters contained in the provided name parts will be escaped as documented for
+     * {@link net.centro.rtb.monitoringcenter.util.MetricNamingUtil#join(String, String...)}.
+     *
+     * @param gaugeSupplier supplier for the gauge.
+     * @param topLevelName top-level part of the gauge's name.
+     * @param additionalNames additional parts of the gauge's name.
+     * @return a new or existing gauge.
+     * @throws NullPointerException if supplier is <tt>null</tt>.
+     * @throws IllegalArgumentException if top-level part of the name is blank.
+     */
+    <T> Gauge<T> getGauge(Supplier<Gauge<T>> gaugeSupplier, String topLevelName, String... additionalNames);
 
     /**
      * Registers a gauge. This method is thread-safe. An attempt to register a gauge, which has already been registered

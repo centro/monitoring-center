@@ -29,6 +29,7 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricSet;
 import com.codahale.metrics.Timer;
+import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.mchange.v2.c3p0.PooledDataSource;
 
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 
 /**
  * A MetricCollector returned when the MonitoringCenter has not been configured.
@@ -49,8 +51,20 @@ class NoOpMetricCollector implements MetricCollector {
     }
 
     @Override
+    public Counter getCounter(Supplier<Counter> counterSupplier, String topLevelName, String... additionalNames) {
+        Preconditions.checkNotNull(counterSupplier, "counterSupplier cannot be null");
+        return counterSupplier.get();
+    }
+
+    @Override
     public Timer getTimer(String topLevelName, String... additionalNames) {
         return new Timer();
+    }
+
+    @Override
+    public Timer getTimer(Supplier<Timer> timerSupplier, String topLevelName, String... additionalNames) {
+        Preconditions.checkNotNull(timerSupplier, "timerSupplier cannot be null");
+        return timerSupplier.get();
     }
 
     @Override
@@ -59,8 +73,26 @@ class NoOpMetricCollector implements MetricCollector {
     }
 
     @Override
+    public Meter getMeter(Supplier<Meter> meterSupplier, String topLevelName, String... additionalNames) {
+        Preconditions.checkNotNull(meterSupplier, "meterSupplier cannot be null");
+        return meterSupplier.get();
+    }
+
+    @Override
     public Histogram getHistogram(String topLevelName, String... additionalNames) {
         return new Histogram(new ExponentiallyDecayingReservoir());
+    }
+
+    @Override
+    public Histogram getHistogram(Supplier<Histogram> histogramSupplier, String topLevelName, String... additionalNames) {
+        Preconditions.checkNotNull(histogramSupplier, "histogramSupplier cannot be null");
+        return histogramSupplier.get();
+    }
+
+    @Override
+    public <T> Gauge<T> getGauge(Supplier<Gauge<T>> gaugeSupplier, String topLevelName, String... additionalNames) {
+        Preconditions.checkNotNull(gaugeSupplier, "gaugeSupplier cannot be null");
+        return gaugeSupplier.get();
     }
 
     @Override
