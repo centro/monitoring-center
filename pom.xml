@@ -60,7 +60,7 @@
         <javac.target.version>1.8</javac.target.version>
 
         <jackson.version>2.9.0</jackson.version>
-        <metrics.version>3.2.2</metrics.version>
+        <metrics.version>3.2.6</metrics.version>
     </properties>
 
     <dependencies>
