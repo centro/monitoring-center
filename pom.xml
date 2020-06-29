@@ -5,7 +5,7 @@
     <groupId>net.centro.rtb</groupId>
     <artifactId>monitoring-center</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.18-SNAPSHOT</version>
+    <version>1.0.19-SNAPSHOT</version>
     <name>MonitoringCenter</name>
     <description>MonitoringCenter is an easy-to-use, comprehensive framework for programmatically monitoring Java
         applications.
