@@ -47,6 +47,7 @@ import java.lang.management.ManagementFactory;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -65,9 +66,9 @@ import java.util.concurrent.TimeUnit;
  * is up to the client, but for consistency it is recommended to map this servlet to /monitoringCenter.</p>
  *
  * <p>
- *     The servlet documents itself at the root path--that is, sending a GET request to this servlet's root path (e.g.,
- *     GET /monitoringCenter) will output a JSON array containing descriptions for all exposed endpoints. Also, one can
- *     access these same descriptions programmatically via the {@link #ENDPOINT_DESCRIPTIONS} constant.
+ * The servlet documents itself at the root path--that is, sending a GET request to this servlet's root path (e.g.,
+ * GET /monitoringCenter) will output a JSON array containing descriptions for all exposed endpoints. Also, one can
+ * access these same descriptions programmatically via the {@link #ENDPOINT_DESCRIPTIONS} constant.
  * </p>
  */
 public class MonitoringCenterServlet extends HttpServlet {
@@ -133,6 +134,7 @@ public class MonitoringCenterServlet extends HttpServlet {
     private static final String PATH_NODE_INFO = "/nodeInfo";
     private static final String PATH_SERVER_INFO = "/serverInfo";
     private static final String PATH_APP_INFO = "/appInfo";
+    private static final String REQUEST_INFO = "/requestInfo/headers";
 
     public static final List<EndpointDescription> ENDPOINT_DESCRIPTIONS = Collections.unmodifiableList(new ArrayList<EndpointDescription>() {{
         add(new EndpointDescription(PATH_METRICS, "Retrieves current readings from registered metrics.")
@@ -253,6 +255,8 @@ public class MonitoringCenterServlet extends HttpServlet {
             handleServerInfo(httpServletRequest, httpServletResponse);
         } else if (path.startsWith(PATH_APP_INFO)) {
             handleAppInfo(httpServletRequest, httpServletResponse);
+        } else if (path.startsWith(REQUEST_INFO)) {
+            handleRequestInfo(httpServletRequest, httpServletResponse);
         } else {
             httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
@@ -344,6 +348,17 @@ public class MonitoringCenterServlet extends HttpServlet {
 
     private void handleAppInfo(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {
         writeAsJson(httpServletRequest, httpServletResponse, MonitoringCenter.getAppInfo());
+    }
+
+    private void handleRequestInfo(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {
+        Map<String, String> headerMap = new HashMap<>();
+        Enumeration<String> headerNames = httpServletRequest.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String headerKey = headerNames.nextElement();
+            String headerValue = httpServletRequest.getHeader(headerKey);
+            headerMap.put(headerKey, headerValue);
+        }
+        writeAsJson(httpServletRequest, httpServletResponse, headerMap);
     }
 
     private void handleServerInfo(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {
